@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Расписание ККСТ</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root { --accent:#2563eb; --accent-d:#1e40af; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; font-family:'Segoe UI', system-ui, sans-serif;
+    background:#f5f7fa; color:#111827; min-height:100vh;
+  }
+  .wrap { max-width:720px; margin:0 auto; padding:16px 12px 40px; }
+  h1 { font-size:22px; margin:6px 0 2px; }
+  .sub { color:#6b7280; margin:0 0 14px; font-size:13px; }
+  .panel {
+    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+    padding:14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  }
+  input[type=text] {
+    flex:1; min-width:150px; font-size:18px; padding:12px 14px;
+    border:2px solid #d1d5db; border-radius:10px; outline:none;
+    text-transform:uppercase;
+  }
+  input[type=text]:focus { border-color:var(--accent); }
+  button {
+    font-size:15px; padding:12px 18px; border:none; border-radius:10px;
+    background:var(--accent); color:#fff; cursor:pointer; font-weight:600;
+  }
+  button:disabled { opacity:.5; cursor:default; }
+  button.ghost { background:#eef2ff; color:var(--accent-d); }
+  button.send { background:#059669; }
+  #status { margin:12px 2px; font-size:14px; color:#6b7280; min-height:20px; }
+  #status.err { color:#dc2626; }
+  #actions { display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; justify-content:center; }
+  #result { text-align:center; }
+  #result img {
+    max-width:100%; border-radius:14px; border:1px solid #e5e7eb;
+    box-shadow:0 8px 30px rgba(0,0,0,.08);
+  }
+  .chips { margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; }
+  .chip {
+    font-size:12px; background:#eef2ff; color:var(--accent-d);
+    border-radius:999px; padding:4px 9px; cursor:pointer; user-select:none;
+  }
+  canvas { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Расписание ККСТ</h1>
+  <p class="sub">Данные: файл «Расписание занятий на текущую дату» (Яндекс.Диск техникума)</p>
+
+  <div class="panel">
+    <input id="group" type="text" list="grouplist" placeholder="Группа, напр. ВВ-241"
+           autocomplete="off" spellcheck="false" enterkeyhint="go">
+    <datalist id="grouplist"></datalist>
+    <button id="go">Показать</button>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div id="status">Загружаю расписание…</div>
+
+  <div id="linkfix" class="panel" style="display:none">
+    <div style="width:100%; font-size:13px; color:#92400e">
+      Автоматически найти файл не удалось. Откройте
+      <a href="https://kkst.kemobl.ru/studentam/raspisanie/" target="_blank">страницу расписания</a>,
+      скопируйте адрес ссылки «Расписание занятий на текущую дату» и вставьте сюда:
+    </div>
+    <input id="manuallink" type="text" placeholder="https://docs.yandex.ru/docs/view?url=..."
+           style="text-transform:none">
+    <button id="linkgo">Применить</button>
+  </div>
+
+  <div id="actions">
+    <button id="send" class="send" style="display:none">📤 Отправить в чат</button>
+    <a id="dl" style="display:none; text-decoration:none"><button class="ghost">⬇ Скачать PNG</button></a>
+    <button id="refresh" class="ghost">⟳ Обновить данные</button>
+  </div>
+
+  <div id="result"><img id="img" alt="" style="display:none"></div>
+  <canvas id="cv"></canvas>
+</div>
+
+<script src="xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<script src="parser.js"></script>
+<script src="render.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
