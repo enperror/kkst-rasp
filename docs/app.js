@@ -44,13 +44,27 @@
   }
 
   async function tryDownload(key) {
-    const api = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" +
-                encodeURIComponent(key);
-    const meta = await (await fetch(api)).json();
-    if (!meta.href) throw new Error(meta.description || "нет ссылки");
-    const resp = await fetch(meta.href);
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    return await resp.arrayBuffer();
+    // 1) пробуем напрямую с Яндекс.Диска (быстрее)
+    try {
+      const api = "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" +
+                  encodeURIComponent(key);
+      const meta = await (await fetch(api)).json();
+      if (!meta.href) throw new Error(meta.description || "нет ссылки");
+      const resp = await fetch(meta.href);
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      return await resp.arrayBuffer();
+    } catch (direct) {
+      // 2) не вышло (webview/антивирус режет запросы к Яндексу) —
+      //    качаем через воркер
+      if (!WORKER) throw direct;
+      const r = await fetch(WORKER + "/file?key=" + encodeURIComponent(key));
+      if (!r.ok) {
+        let msg = "HTTP " + r.status;
+        try { msg = (await r.json()).error || msg; } catch (e) {}
+        throw new Error(msg);
+      }
+      return await r.arrayBuffer();
+    }
   }
 
   async function fetchXlsx() {
@@ -70,6 +84,13 @@
         const buf = await tryDownload(key);
         lsSet("lastGoodKey", key);
         return { buf, source: label };
+      } catch (e) { lastErr = e; }
+    }
+    // 3) последний автоматический шанс: воркер сам найдёт ключ и отдаст файл
+    if (WORKER) {
+      try {
+        const r = await fetch(WORKER + "/file");
+        if (r.ok) return { buf: await r.arrayBuffer(), source: "воркер" };
       } catch (e) { lastErr = e; }
     }
     throw new Error("не удалось скачать файл ни по одной ссылке" +
