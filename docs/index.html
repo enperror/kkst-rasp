@@ -3,90 +3,1019 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Расписание ККСТ</title>
+<meta name="theme-color" content="#E2EAF0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ККСТ">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Расписание занятий — ККСТ</title>
+<link rel="icon" type="image/png" href="kkst-logo.png">
+<link rel="apple-touch-icon" href="kkst-logo.png">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
-  :root { --accent:#2563eb; --accent-d:#1e40af; }
-  * { box-sizing: border-box; }
-  body {
-    margin:0; font-family:'Segoe UI', system-ui, sans-serif;
-    background:#f5f7fa; color:#111827; min-height:100vh;
+  :root{
+    --bg:#101112;
+    --card:#191A1C;
+    --card-2:#202124;
+    --line:#34363A;
+    --line-2:#2B2D30;
+    --red:#D92D3A;
+    --red-dark:#A91F2A;
+    --red-soft:#281518;
+    --white:#F4F3F0;
+    --muted:#B8B9BB;
+    --muted-2:#929498;
+    --muted-3:#74767A;
+    --halftone: radial-gradient(circle, rgba(210,210,210,.78) 1px, transparent 1.4px);
   }
-  .wrap { max-width:720px; margin:0 auto; padding:16px 12px 40px; }
-  h1 { font-size:22px; margin:6px 0 2px; }
-  .sub { color:#6b7280; margin:0 0 14px; font-size:13px; }
-  .panel {
-    background:#fff; border:1px solid #e5e7eb; border-radius:14px;
-    padding:14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--white);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
   }
-  input[type=text] {
-    flex:1; min-width:150px; font-size:18px; padding:12px 14px;
-    border:2px solid #d1d5db; border-radius:10px; outline:none;
-    text-transform:uppercase;
+  /* Halftone is applied as a clipped texture overlay on selected UI surfaces, never as wallpaper. */
+  .wrap{max-width:760px; margin:0 auto; padding:20px 12px 40px; position:relative; z-index:1;}
+  .display-mode-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+  .display-mode-control{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:10px;background:#151618}
+  .notes-open-button{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:#151618;color:var(--muted);font:500 11px 'Inter',sans-serif;cursor:pointer;transition:border-color .16s,color .16s}
+  .notes-open-button:hover,.notes-open-button:focus-visible{outline:none;border-color:var(--red);color:var(--white)}
+  #notes-count{display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--red-soft);color:var(--red);font:10px 'IBM Plex Mono',monospace}
+  .display-mode-button{min-height:36px;padding:7px 11px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--muted);font:500 11px 'Inter',sans-serif;white-space:nowrap;cursor:pointer;transition:background-color .16s,border-color .16s,color .16s}
+  .display-mode-button[aria-pressed="true"]{border-color:var(--red);background:var(--red-soft);color:var(--white)}
+  .display-mode-button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  /* Group picker: concise utility bar, fast filters and tactile group pills */
+  .group-intro{
+    margin-top:0; padding:16px 18px 16px;
+    background:var(--card); border:1px solid var(--line); border-left:3px solid var(--red);
+    position:relative; overflow:hidden; text-align:left;
   }
-  input[type=text]:focus { border-color:var(--accent); }
-  button {
-    font-size:15px; padding:12px 18px; border:none; border-radius:10px;
-    background:var(--accent); color:#fff; cursor:pointer; font-weight:600;
+  .group-intro::after{
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:var(--halftone); background-size:11px 11px; opacity:.11;
+    mask-image:linear-gradient(115deg, transparent 6%, #000 42%, transparent 82%);
   }
-  button:disabled { opacity:.5; cursor:default; }
-  button.ghost { background:#eef2ff; color:var(--accent-d); }
-  button.send { background:#059669; }
-  #status { margin:12px 2px; font-size:14px; color:#6b7280; min-height:20px; }
-  #status.err { color:#dc2626; }
-  #actions { display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; justify-content:center; }
-  #result { text-align:center; }
-  #result img {
-    max-width:100%; border-radius:14px; border:1px solid #e5e7eb;
-    box-shadow:0 8px 30px rgba(0,0,0,.08);
+  .picker-meta,.picker-tools,.family-nav,.group-families,#status{position:relative;z-index:1}
+  .picker-meta{display:flex;align-items:center;gap:9px;margin:0 0 13px;color:var(--muted);font:500 12px 'IBM Plex Mono',monospace;letter-spacing:.02em}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px rgba(217,45,58,.12);flex:0 0 auto}
+  .picker-note{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.02em;color:var(--muted);line-height:1.6}
+  .picker-tools{display:flex;gap:8px;margin-bottom:11px}
+  .group-search{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding:0 12px;background:#111213;border:1px solid var(--line);min-height:44px;color:var(--muted)}
+  .group-search:focus-within{border-color:var(--red)}
+  .group-search .search-mark{font-size:18px;color:var(--red);line-height:1}
+  #group-filter,#teacher-filter{appearance:none;width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--white);font:500 13px 'Inter',sans-serif;padding:10px 0;letter-spacing:0;text-transform:none}
+  #group-filter::placeholder,#teacher-filter::placeholder{color:var(--muted-2);opacity:1}
+  #clear-filter,#clear-teacher-filter{min-width:82px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:#151618;color:var(--muted);font:500 11px 'Inter',sans-serif;cursor:pointer}
+  #clear-filter:hover,#clear-teacher-filter:hover{border-color:var(--red);color:var(--white)}
+  .family-nav{display:flex;gap:7px;overflow-x:auto;padding:1px 1px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab}
+  .family-nav::-webkit-scrollbar{display:none}
+  .family-nav.is-dragging{cursor:grabbing;user-select:none;-webkit-user-select:none}
+  .family-filter{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;background:#151618;color:var(--muted);padding:7px 12px;min-height:34px;font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.04em;cursor:pointer}
+  .family-filter:hover,.family-filter.active{background:var(--red-soft);border-color:var(--red);color:var(--white)}
+  .group-families{display:grid;gap:12px}
+  .group-family{border-top:1px solid var(--line-2);padding-top:11px}
+  .group-family:first-child{border-top:0;padding-top:0}
+
+  .bubble-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .group-bubble{
+    position:relative;display:inline-flex;align-items:center;gap:8px;min-width:104px;min-height:42px;padding:7px 13px;
+    border:1px solid #414347;border-radius:999px;background:#17181A;color:var(--white);
+    font:500 13px 'Inter',sans-serif;letter-spacing:.015em;cursor:pointer;overflow:hidden;
+    transition:transform .15s,border-color .15s,background .15s,color .15s;
   }
-  .chips { margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; }
-  .chip {
-    font-size:12px; background:#eef2ff; color:var(--accent-d);
-    border-radius:999px; padding:4px 9px; cursor:pointer; user-select:none;
+  .group-bubble::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--halftone);background-size:8px 8px;opacity:.14;mask-image:linear-gradient(90deg,#000,transparent 75%)}
+  .group-bubble > span{position:relative;z-index:1}
+  .bubble-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 3px rgba(217,45,58,.12);flex:0 0 auto}
+  .bubble-label{color:var(--muted)}
+  .bubble-course{color:var(--white);font-variant-numeric:tabular-nums}
+  .group-empty{position:relative;z-index:1;padding:15px 0;color:var(--muted);font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.06em}
+  .picker-secondary-action{position:relative;z-index:1;margin:2px 0 12px}
+  .teacher-entry-button{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(18,19,20,.86);color:var(--white);font:600 13px 'Inter',sans-serif;text-align:left;cursor:pointer;transition:border-color .16s,background-color .16s,transform .16s}
+  .teacher-entry-button:hover{border-color:var(--red);background:#20191A;transform:translateY(-1px)}
+  .teacher-entry-icon{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--red-soft);color:var(--red);font:600 16px 'Space Grotesk',sans-serif}
+  .teacher-entry-hint{margin-left:auto;color:var(--muted);font:11px 'IBM Plex Mono',monospace}
+  .teacher-picker-shell{position:relative;overflow:hidden;margin-top:14px;padding:16px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--red)}
+  .teacher-picker-shell::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--halftone);background-size:11px 11px;opacity:.09;mask-image:linear-gradient(115deg,transparent 5%,#000 45%,transparent 85%)}
+  .teacher-picker-meta,.teacher-list,.teacher-picker-shell .picker-tools,.teacher-picker-shell .group-empty{position:relative;z-index:1}
+  .teacher-picker-meta{display:flex;align-items:center;gap:9px;margin:0 0 13px;color:var(--muted);font:500 12px 'IBM Plex Mono',monospace}
+  .teacher-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+  .teacher-option{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:46px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#17181A;color:var(--white);text-align:left;cursor:pointer;transition:border-color .16s,background-color .16s,transform .16s}
+  .teacher-option[hidden]{display:none}
+  .teacher-option:hover,.teacher-option:focus-visible{outline:none;border-color:var(--red);background:#211A1B;transform:translateY(-1px)}
+  .teacher-option-name{font:500 13px 'Inter',sans-serif;line-height:1.35}
+  .teacher-option-arrow{color:var(--red);font:500 16px 'Space Grotesk',sans-serif}
+  .group-bubble:hover,.group-bubble:focus-visible{outline:none;transform:translateY(-1px);border-color:var(--red);background:#242023;color:#fff}
+  .group-bubble:active{transform:scale(.97)}
+  .group-bubble[hidden],.group-family[hidden]{display:none!important}
+  @keyframes settle-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+  .group-family,.day{animation:settle-in .32s cubic-bezier(.2,.7,.2,1) both}
+  .group-family:nth-child(2){animation-delay:35ms}.group-family:nth-child(3){animation-delay:70ms}.group-family:nth-child(4){animation-delay:105ms}
+  .group-bubble{transition:transform .16s ease,border-color .16s ease,background-color .16s ease}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+  #status{
+    position:relative; z-index:1;
+    margin:10px 0 0; min-height:16px;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; line-height:1.5; letter-spacing:0.02em; color:var(--muted);
   }
-  canvas { display:none; }
-  .hint { width:100%; font-size:13px; color:#374151; line-height:1.4; }
-  .hint code { background:#f3f4f6; padding:1px 5px; border-radius:6px; font-size:12px; }
+  #status.err{color:var(--red)}
+  /* linkfix */
+  #linkfix{
+    margin-top:12px;
+    background:var(--red-soft);
+    border:1px solid #3A1A1A;
+    padding:16px;
+    gap:10px; flex-wrap:wrap; align-items:center;
+  }
+  #linkfix .hint{
+    width:100%; font-size:12px; line-height:1.6; color:#A8A8A8;
+  }
+  #linkfix .hint a{color:var(--red); text-decoration:none; border-bottom:1px solid var(--red)}
+  #linkfix code{
+    background:#0B0B0B; border:1px solid var(--line);
+    padding:2px 6px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--red);
+  }
+  #linkfix input{flex:1; text-transform:none; letter-spacing:0}
+  #linkfix button{
+    background:var(--white); color:#0B0B0B; border:none;
+    font-family:'Space Grotesk',sans-serif; font-weight:600; letter-spacing:0.01em; padding:10px 18px; cursor:pointer;
+  }
+  /* actions */
+  #actions{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:14px 0;}
+  .back-groups{margin-top:14px}
+  .day-switcher{margin:14px 0 8px}
+  .day-nav{display:flex;width:100%;gap:7px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--muted-3) transparent}
+  .day-tab{display:flex;flex:1 0 116px;min-width:116px;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#17181A;color:var(--muted);text-align:left;cursor:pointer;transition:background-color .16s,border-color .16s,color .16s,transform .16s}
+  .day-tab:hover{border-color:#66696E;color:var(--white)}
+  .day-tab.active{background:var(--red-soft);border-color:var(--red);color:var(--white)}
+  .day-tab-main{display:grid;gap:2px;min-width:0}
+  .day-tab-weekday{font:600 12px 'Inter',sans-serif;color:inherit}
+  .day-tab-date{font:11px 'IBM Plex Mono',monospace;color:var(--muted)}
+  .day-tab-today{font:500 9px 'IBM Plex Mono',monospace;color:var(--red);white-space:nowrap}
+  button.ghost{
+    background:transparent; border:1px solid var(--line); color:var(--muted);
+    font-family:'Inter',sans-serif; font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
+    padding:10px 14px; cursor:pointer; transition:0.15s;
+  }
+  button.ghost:hover{border-color:var(--muted-3); color:var(--white)}
+  button.send{
+    background:var(--red); border:1px solid var(--red); color:#fff;
+    font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.01em; padding:10px 16px; cursor:pointer;
+  }
+  button.send:hover{background:#B91C1C}
+  button:disabled{opacity:.45; cursor:default}
+  #dl{text-decoration:none}
+  /* board */
+  #board{margin-top:8px; display:grid; gap:18px;}
+  .board-head{
+    background:var(--card); border:1px solid var(--line); padding:14px 16px;
+    text-align:center; position:relative; overflow:hidden;
+  }
+  .board-head::before{
+    content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background-image:var(--halftone); background-size:9px 9px; opacity:0.16;
+  }
+  .board-head .group-title{
+    position:relative; z-index:1; font-family:'Space Grotesk',sans-serif; font-size:38px; font-weight:700; letter-spacing:-0.03em; color:var(--white); line-height:1.08; overflow-wrap:anywhere;
+  }
+  .board-overline{position:relative;z-index:1;margin-bottom:5px;color:var(--muted);font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.08em}
+  .teacher-board-head{text-align:left}
+  .day{
+    background:var(--card); border:1px solid var(--line);
+    border-left:2px solid var(--red);
+    position:relative; overflow:hidden;
+  }
+  .day::after{
+    content:""; position:absolute; inset:0; z-index:0;
+    background-image:var(--halftone); background-size:10px 10px; opacity:0.12; pointer-events:none;
+    mask-image:linear-gradient(135deg,transparent 8%,#000 45%,transparent 90%);
+  }
+  .day > *{position:relative;z-index:1}
+  .day-head{
+    position:relative;
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    background:#171819; border-bottom:1px solid var(--line); padding:13px 16px;
+  }
+  .day-heading{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .day-title{font-family:'Inter',sans-serif;font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--white)}
+  .week-label{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:var(--muted);padding:3px 7px;border:1px solid var(--line);border-radius:999px}
+  .day-date{font:500 11px 'IBM Plex Mono',monospace;color:var(--muted);letter-spacing:.015em;background:#202124;border:1px solid var(--line);border-radius:999px;padding:5px 9px;white-space:nowrap}
+  .day.is-today{border-left-width:3px;border-left-color:var(--red)}
+  .day.is-today .day-date{border-color:var(--red);color:var(--white)}
+  .today-label{color:var(--red);font-size:9px;letter-spacing:.08em;margin-left:6px}
+  .lessons{position:relative}
+  .lesson{
+    position:relative;
+    display:grid; grid-template-columns:72px 1fr 86px; gap:14px;
+    padding:14px 16px; border-bottom:1px solid var(--line-2); align-items:start;
+    background:transparent;
+  }
+  .lesson:last-child{border-bottom:none}
+  .lesson.zebra{background:var(--card-2)}
+  .lesson.zebra::before{
+    content:""; position:absolute; inset:0; z-index:0;
+    background-image:var(--halftone); background-size:8px 8px; opacity:0.14; pointer-events:none;
+    mask-image:linear-gradient(90deg,transparent,#000 35%,transparent 90%);
+  }
+  .lesson > *{position:relative;z-index:1}
+  .num{position:relative; text-align:center}
+  .num-badge{
+    width:46px; height:30px; margin:0 auto;
+    background:#0B0B0B; border:1px solid var(--red); color:var(--red);
+    font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; letter-spacing:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .num-badge.vd{font-size:16px}
+  .time{
+    margin-top:6px;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.4; color:var(--muted); letter-spacing:0.015em; text-align:center;
+  }
+  .subj-wrap{position:relative}
+  .entry{margin-bottom:6px}
+  .entry:last-child{margin-bottom:0}
+  .subgroup{
+    display:inline-block;
+    background:var(--red); color:#fff;
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.06em;
+    padding:2px 6px; margin-bottom:4px;
+  }
+  .subj{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:15px; line-height:1.42; color:var(--white);
+  }
+  .teacher{
+    font-family:'Inter',sans-serif; font-size:13px; color:var(--muted); margin-top:4px; line-height:1.45;
+  }
+  .teacher-link{display:inline;padding:0;border:0;border-bottom:1px dotted #74767A;background:transparent;color:var(--muted);font:inherit;line-height:inherit;text-align:left;cursor:pointer}
+  .teacher-link:hover,.teacher-link:focus-visible{outline:none;color:var(--red);border-bottom-color:var(--red)}
+  .teacher-schedule-list{display:grid}
+  .teacher-lesson{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr) 90px;gap:13px;align-items:start;padding:14px 16px;border-bottom:1px solid var(--line-2);background:var(--card)}
+  .teacher-lesson:nth-child(even){background:var(--card-2)}
+  .teacher-lesson:nth-child(even)::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:var(--halftone);background-size:9px 9px;opacity:.12;mask-image:linear-gradient(90deg,transparent,#000 35%,transparent)}
+  .teacher-lesson > *{position:relative;z-index:1}
+  .teacher-groups{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:6px}
+  .teacher-assignment{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+  .teacher-class{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:#252629;color:var(--white);font:500 10px 'IBM Plex Mono',monospace}
+  .teacher-subgroup{display:inline-block;color:var(--muted);font:10px 'IBM Plex Mono',monospace}
+  .teacher-room{align-self:start;justify-self:end;padding:6px 9px;border:1px solid var(--line);border-radius:8px;color:var(--red);font:600 14px 'Space Grotesk',sans-serif;text-align:center}
+  .teacher-conflict-note{margin:10px 14px;padding:10px 12px;border-left:2px solid #D5A44A;border-radius:4px;background:#252219;color:#D8C9A8;font:12px/1.5 'Inter',sans-serif}
+  .teacher-lesson .subj{font-size:14px}
+  .board-heading-row{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+  .board-heading-row .group-title{min-width:0}
+  .teacher-board-head .board-heading-row{justify-content:flex-start}
+  .favorite-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:#151618;color:var(--muted);font:500 11px 'Inter',sans-serif;cursor:pointer}
+  .favorite-button:hover,.favorite-button:focus-visible,.favorite-button.is-favorite{outline:none;border-color:var(--red);color:var(--white);background:var(--red-soft)}
+  .favorite-star{color:var(--red);font-size:17px;line-height:1}
+  .roster-panel,.notes-page{margin:0 0 16px;padding:18px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--red)}
+  .roster-panel[hidden],.notes-page[hidden],.note-modal[hidden]{display:none!important}
+  .roster-panel-head,.notes-page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .roster-panel-title,.notes-page-title{margin:0;font:600 20px 'Space Grotesk',sans-serif;color:var(--white)}
+  .roster-date-label{color:var(--muted);font:11px 'IBM Plex Mono',monospace}
+  .roster-toolbar,.roster-editor-actions,.note-modal-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .roster-editor{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;background:#141516}
+  .roster-editor[hidden]{display:none!important}
+  .roster-editor label{display:block;margin-bottom:7px;color:var(--muted);font:11px 'IBM Plex Mono',monospace}
+  #roster-textarea{display:block;width:100%;min-height:150px;resize:vertical;padding:11px;border:1px solid var(--line);border-radius:7px;background:#0F1011;color:var(--white);font:14px/1.5 'Inter',sans-serif}
+  #roster-textarea:focus,#note-textarea:focus{outline:1px solid var(--red);border-color:var(--red)}
+  .roster-editor-hint{margin:7px 0 10px;color:var(--muted-2);font:11px/1.5 'Inter',sans-serif}
+  .roster-list{display:grid;gap:6px;margin:12px 0}
+  .student-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,220px);align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:#17181A}
+  .student-name{min-width:0;overflow-wrap:anywhere;font:500 13px/1.4 'Inter',sans-serif}
+  .student-controls{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+  .attendance-pill{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:38px;padding:7px 10px;border:1px solid #414347;border-radius:999px;background:#17181A;color:var(--muted);font:500 10px 'Inter',sans-serif;white-space:nowrap;cursor:pointer;transition:background-color .16s,border-color .16s,color .16s,transform .16s}
+  .attendance-pill:hover,.attendance-pill:focus-visible{outline:none;border-color:var(--red);color:var(--white);transform:translateY(-1px)}
+  .attendance-pill .attendance-mark{font:600 13px 'IBM Plex Mono',monospace;color:var(--muted-2)}
+  .attendance-pill.is-present{border-color:#4E8D69;background:#16241B;color:#C0E4CA}
+  .attendance-pill.is-present .attendance-mark{color:#83C894}
+  .attendance-pill.is-absent{border-color:var(--red);background:var(--red-soft);color:#F3B7BC}
+  .attendance-pill.is-absent .attendance-mark{color:#F07882}
+  .maybe-arrive{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:#17181A;color:var(--muted);font:500 11px 'Inter',sans-serif;white-space:nowrap;cursor:pointer;user-select:none}
+  .maybe-arrive:hover{border-color:var(--red);color:var(--white)}
+  .maybe-arrive.is-checked{border-color:#8E7138;background:#282318;color:#F0D391}
+  .maybe-arrive[hidden]{display:none!important}
+  .maybe-arrive input{width:19px;height:19px;margin:0;accent-color:#D5A44A;cursor:pointer}
+  .roster-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line)}
+  #roster-copy{min-height:44px;padding:10px 16px;border-color:var(--red);background:var(--red-soft);color:var(--white);font-size:12px}
+  #roster-copy:hover{background:#35191D}
+  #roster-copy-status{min-height:16px;color:var(--muted);font:11px/1.4 'IBM Plex Mono',monospace}
+  .roster-copy-fallback{display:grid;gap:8px;margin-top:10px;padding:10px;border:1px solid #5D4B2D;border-radius:8px;background:#252219;color:#D8C9A8;font:12px/1.5 'Inter',sans-serif}
+  .roster-copy-fallback[hidden]{display:none!important}
+  #roster-copy-text{width:100%;min-height:130px;resize:vertical;padding:10px;border:1px solid var(--line);border-radius:6px;background:#101112;color:var(--white);font:12px/1.5 'IBM Plex Mono',monospace}
+  .notes-list{display:grid;gap:9px}
+  .notes-list[hidden]{display:none!important}
+  .note-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;padding:14px;border:1px solid var(--line-2);border-radius:9px;background:#17181A}
+  .note-card-context{margin-bottom:6px;color:var(--muted);font:11px 'IBM Plex Mono',monospace}
+  .note-card-text{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--white);font:13px/1.5 'Inter',sans-serif}
+  .note-card-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .note-card-actions button,.notes-page-head button,.roster-toolbar button,.roster-editor-actions button,.roster-footer button,.note-modal-actions button{min-height:36px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:#141516;color:var(--muted);font:500 11px 'Inter',sans-serif;cursor:pointer}
+  .note-card-actions button:hover,.notes-page-head button:hover,.roster-toolbar button:hover,.roster-editor-actions button:hover,.roster-footer button:hover,.note-modal-actions button:hover{border-color:var(--red);color:var(--white)}
+  .note-modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:14px;background:rgba(0,0,0,.76)}
+  .note-modal-card{width:min(620px,100%);max-height:min(90vh,820px);overflow:auto;padding:20px;border:1px solid var(--line);border-top:3px solid var(--red);border-radius:12px;background:#191A1C;box-shadow:0 18px 80px rgba(0,0,0,.55)}
+  .note-modal-title{margin:0 0 5px;font:600 22px 'Space Grotesk',sans-serif}
+  .note-modal-context{margin-bottom:13px;color:var(--muted);font:11px/1.5 'IBM Plex Mono',monospace}
+  #note-textarea{display:block;width:100%;min-height:180px;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:8px;background:#101112;color:var(--white);font:14px/1.55 'Inter',sans-serif}
+  .note-modal-actions{justify-content:space-between;margin-top:12px}
+  .note-modal-actions .primary-action{border-color:var(--red);background:var(--red-soft);color:var(--white)}
+  .note-modal-actions .delete-action{margin-right:auto;color:#F1A0A6}
+  .lesson-note-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .lesson-note-button{min-height:32px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#151618;color:var(--muted);font:500 10px 'IBM Plex Mono',monospace;cursor:pointer}
+  .lesson-note-button:hover,.lesson-note-button.has-note{border-color:var(--red);color:var(--white);background:var(--red-soft)}
+  .lesson-note-preview{flex:1;min-width:0;max-width:100%;overflow:hidden;color:var(--muted);font:11px/1.45 'Inter',sans-serif;white-space:nowrap;text-overflow:ellipsis}
+  .room{
+    position:relative;
+    font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:600; letter-spacing:0; color:var(--red);
+    background:#0B0B0B; border:1px solid var(--line); padding:8px 6px; text-align:center; height:fit-content;
+  }
+  .room div{line-height:1.15}
+  .room.empty-room{color:var(--muted-2); border-style:dashed}
+  .window{
+    position:relative;
+    display:grid; grid-template-columns:72px 1fr; gap:14px; padding:14px 16px;
+    background:#151617; border-bottom:1px solid var(--line-2); opacity:0.9;
+  }
+  .window .num-badge{border-color:var(--muted-3); color:var(--muted)}
+  .window-msg{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; color:var(--muted); align-self:center;
+  }
+  .window-msg span{color:var(--muted-2); margin-left:8px}
+  .empty{
+    padding:22px; text-align:center;
+    font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.015em; color:var(--muted);
+  }
+  /* image fallback (hidden) */
+  #result{margin-top:10px; text-align:center}
+  #result img{max-width:100%; border:1px solid var(--line); display:none}
+  canvas{display:none}
+  @media(max-width:640px){
+    .wrap{padding:16px 10px 32px}
+    .group-intro{padding:16px 12px 13px}
+    .picker-tools{gap:6px}
+    #clear-filter,#clear-teacher-filter{min-width:76px;padding:0 8px;font-size:10px}
+    .family-nav{margin-right:-4px}
+    .group-bubble{min-height:44px;min-width:98px;padding:8px 12px}
+    .day-switcher{margin-top:12px}
+    .day-tab{flex-basis:108px;min-width:108px;padding:7px 9px}
+    .lesson{grid-template-columns:60px 1fr; }
+    .room{grid-column:1 / -1; display:flex; gap:8px; justify-content:flex-start; align-items:center; font-size:15px; padding:8px 10px;}
+    .room div{border-right:1px solid var(--line); padding-right:8px}
+    .room div:last-child{border:none}
+    .day-title{font-size:17px}
+    .teacher-picker-shell{padding:13px 10px}
+    .teacher-list{grid-template-columns:1fr}
+    .teacher-lesson{grid-template-columns:56px minmax(0,1fr);gap:10px;padding:13px 10px}
+    .teacher-room{grid-column:2;justify-self:start;padding:4px 8px}
+    .board-head .group-title{font-size:30px}
+    .display-mode-button{padding:7px 9px;font-size:10px}
+    .roster-panel,.notes-page{padding:13px 10px}
+    .roster-panel-title,.notes-page-title{font-size:18px}
+    .student-row{grid-template-columns:minmax(0,1fr);gap:7px;padding:9px}
+    .student-controls{justify-content:flex-start}
+    .attendance-pill{min-height:42px;padding:8px 12px;font-size:11px}
+    .maybe-arrive{min-height:44px;padding:8px 13px;font-size:12px}
+    .maybe-arrive input{width:20px;height:20px}
+    .roster-footer{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;text-align:center}
+    #roster-copy{width:100%;min-height:50px;padding:12px 14px;font-size:14px}
+    #roster-copy-status{text-align:center}
+    .note-card{grid-template-columns:minmax(0,1fr);padding:11px}
+    .note-card-actions{justify-content:flex-start}
+    .board-heading-row{gap:8px}
+    .favorite-button{min-height:36px;padding:7px 9px;font-size:10px}
+  }
+  /* TV mode scales the desktop canvas only on wide screens; mobile geometry stays intact. */
+  @media(min-width:901px){
+    body.tv-mode .wrap{width:100%;max-width:1500px;padding:30px 34px 64px}
+    body.tv-mode .display-mode-bar{margin-bottom:18px}
+    body.tv-mode .display-mode-button,body.tv-mode .notes-open-button{min-height:44px;padding:9px 15px;font-size:14px}
+    body.tv-mode #notes-count{min-width:22px;height:22px;font-size:12px}
+    body.tv-mode .group-intro{padding:26px 30px 28px}
+    body.tv-mode .picker-meta,body.tv-mode .teacher-picker-meta{font-size:15px;margin-bottom:18px}
+    body.tv-mode #group-filter,body.tv-mode #teacher-filter{font-size:16px;padding:13px 0}
+    body.tv-mode #clear-filter,body.tv-mode #clear-teacher-filter{min-width:104px;font-size:13px}
+    body.tv-mode .family-filter{min-height:42px;padding:9px 15px;font-size:12px}
+    body.tv-mode .group-bubble{min-height:54px;padding:10px 16px;font-size:16px}
+    body.tv-mode .teacher-picker-shell{margin-top:18px;padding:26px}
+    body.tv-mode .teacher-list{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:11px}
+    body.tv-mode .teacher-option{min-height:58px;padding:14px 16px}
+    body.tv-mode .teacher-option-name{font-size:16px}
+    body.tv-mode .teacher-option-arrow{font-size:20px}
+    body.tv-mode .day-switcher{margin:20px 0 12px}
+    body.tv-mode .day-nav{gap:10px}
+    body.tv-mode .day-tab{flex-basis:170px;min-width:170px;padding:12px 16px}
+    body.tv-mode .day-tab-weekday{font-size:15px}
+    body.tv-mode .day-tab-date{font-size:13px}
+    body.tv-mode #actions{gap:12px;margin:20px 0}
+    body.tv-mode button.ghost,body.tv-mode button.send{font-size:15px;padding:13px 18px}
+    body.tv-mode #board{gap:22px}
+    body.tv-mode .board-head{padding:24px 30px}
+    body.tv-mode .board-head .group-title{font-size:clamp(44px,5vw,68px)}
+    body.tv-mode .board-overline{font-size:13px}
+    body.tv-mode .day-head{padding:18px 28px}
+    body.tv-mode .day-title{font-size:23px}
+    body.tv-mode .day-date{font-size:14px;padding:7px 12px}
+    body.tv-mode .week-label{font-size:12px;padding:5px 10px}
+    body.tv-mode .lesson{grid-template-columns:96px minmax(0,1fr) 132px;gap:20px;padding:22px 28px}
+    body.tv-mode .num-badge{width:62px;height:40px;font-size:24px}
+    body.tv-mode .num-badge.vd{font-size:20px}
+    body.tv-mode .time{font-size:14px}
+    body.tv-mode .subj{font-size:21px;line-height:1.45}
+    body.tv-mode .teacher{font-size:17px}
+    body.tv-mode .room{font-size:22px;padding:10px 9px}
+    body.tv-mode .window{grid-template-columns:96px minmax(0,1fr);gap:20px;padding:20px 28px}
+    body.tv-mode .window-msg{font-size:14px}
+    body.tv-mode .teacher-lesson{grid-template-columns:84px minmax(0,1fr) 140px;gap:20px;padding:21px 28px}
+    body.tv-mode .teacher-class{font-size:13px;padding:6px 10px}
+    body.tv-mode .teacher-subgroup{font-size:12px}
+    body.tv-mode .teacher-lesson .subj{font-size:20px}
+    body.tv-mode .teacher-room{font-size:19px;padding:8px 12px}
+    body.tv-mode .teacher-conflict-note{font-size:15px;padding:13px 16px}
+    body.tv-mode .favorite-button{min-height:48px;padding:11px 16px;font-size:14px}
+    body.tv-mode .favorite-star{font-size:22px}
+    body.tv-mode .roster-panel,body.tv-mode .notes-page{padding:26px}
+    body.tv-mode .roster-panel-title,body.tv-mode .notes-page-title{font-size:28px}
+    body.tv-mode .student-name{font-size:17px}
+    body.tv-mode .attendance-pill{min-height:46px;padding:10px 14px;font-size:14px}
+    body.tv-mode .attendance-pill .attendance-mark{font-size:16px}
+    body.tv-mode .maybe-arrive{min-height:48px;padding:10px 15px;font-size:14px}
+    body.tv-mode .maybe-arrive input{width:22px;height:22px}
+    body.tv-mode #roster-copy{min-height:50px;font-size:15px}
+    body.tv-mode .note-card-context{font-size:13px}
+    body.tv-mode .note-card-text{font-size:16px}
+    body.tv-mode .lesson-note-button{min-height:38px;font-size:12px}
+    body.tv-mode .empty{font-size:19px;padding:30px}
+  }
+  @media(min-width:641px) and (max-width:900px){
+    body.tv-mode .wrap{width:100%;max-width:100%;padding:22px 20px 46px}
+    body.tv-mode .board-head .group-title{font-size:clamp(38px,5vw,52px)}
+    body.tv-mode .subj{font-size:17px}
+  }
+  @media(max-width:380px){
+    .display-mode-button{padding:7px 7px;font-size:9px}
+    .display-mode-control{gap:1px}
+  }
+
+  /* Visual direction from index-v4.html: arctic light palette, square editorial rows, Geist. */
+  :root{
+    --bg:#EBF1F5;
+    --card:#F4F7FA;
+    --card-2:#EDF2F6;
+    --line:#D3DFE9;
+    --line-2:#E0E7ED;
+    --red:#E11D48;
+    --red-dark:#BE123C;
+    --red-soft:#FCE8EE;
+    --white:#1A2229;
+    --muted:#627280;
+    --muted-2:#7C8B97;
+    --muted-3:#95A2AD;
+    --halftone:none;
+  }
+  html{background:var(--bg);color-scheme:light}
+  body,body *{font-family:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important}
+  body{padding:36px 20px;background:var(--bg);color:var(--white)}
+  .wrap{width:100%;max-width:900px;margin:0 auto;padding:0;background:var(--card);border:1px solid var(--line);box-shadow:0 8px 32px rgba(26,34,41,.05);}
+  .display-mode-bar{padding:13px 40px;margin:0;border-bottom:1px solid var(--line);background:var(--card)}
+  .display-mode-control{padding:3px;border:1px solid var(--line);border-radius:0;background:#EAF0F4}
+  .display-mode-button{border-radius:0;color:var(--muted);font-size:12px}
+  .display-mode-button[aria-pressed="true"]{border-color:var(--white);background:var(--white);color:#fff}
+  .notes-open-button{min-height:38px;border-radius:0;background:transparent;color:var(--white);font-size:12px}
+  .notes-open-button:hover,.notes-open-button:focus-visible{border-color:var(--red);color:var(--red)}
+  #notes-count{border-radius:0;background:#FCE8EE;color:var(--red)}
+  .group-intro{margin:0;padding:26px 40px 28px;background:transparent;border:0;border-bottom:1px solid var(--line);text-align:left}
+  .group-intro::after,.teacher-picker-shell::after,.board-head::before,.day::after,.group-bubble::before,.lesson.zebra::before,.teacher-lesson:nth-child(even)::before{display:none!important;background:none!important}
+  .picker-meta,.teacher-picker-meta{color:var(--muted);font-size:12px;letter-spacing:.04em}
+  .live-dot{background:var(--red);box-shadow:0 0 0 4px rgba(225,29,72,.1)}
+  .picker-tools{gap:9px}
+  .group-search{min-height:48px;padding:0 14px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  .group-search:focus-within{border-color:var(--white);box-shadow:0 0 0 2px rgba(26,34,41,.06)}
+  .group-search .search-mark{color:var(--red)}
+  #group-filter,#teacher-filter{color:var(--white);font-size:14px}
+  #group-filter::placeholder,#teacher-filter::placeholder{color:var(--muted-2)}
+  #clear-filter,#clear-teacher-filter{min-height:44px;border-radius:0;background:transparent;color:var(--muted);font-size:12px}
+  #clear-filter:hover,#clear-teacher-filter:hover{border-color:var(--white);color:var(--white)}
+  .family-nav{padding-bottom:9px;gap:8px}
+  .family-filter{min-height:38px;padding:8px 13px;border-radius:0;background:transparent;color:var(--muted);font-size:11px;letter-spacing:.03em}
+  .family-filter:hover,.family-filter.active{border-color:var(--white);background:var(--white);color:#fff}
+  .group-families{gap:0}
+  .group-family{padding-top:17px;margin-top:15px;border-top:1px solid var(--line)}
+  .group-family:first-child{padding-top:0;margin-top:0;border-top:0}
+  .bubble-grid{gap:9px}
+  .group-bubble{min-height:46px;min-width:108px;padding:8px 14px;border-color:var(--line);border-radius:0;background:#fff;color:var(--white);font-size:14px;box-shadow:0 1px 0 rgba(26,34,41,.02)}
+  .group-bubble:hover,.group-bubble:focus-visible{border-color:var(--red);background:#FCE8EE;color:var(--white)}
+  .bubble-dot{background:var(--red);box-shadow:none}
+  .bubble-label{color:var(--muted)}
+  .bubble-course{color:var(--white)}
+  .group-empty{padding:18px 0;color:var(--muted);font-size:12px;letter-spacing:.04em}
+  .teacher-entry-button{min-height:48px;border-radius:0;background:transparent;color:var(--white);font-size:14px}
+  .teacher-entry-button:hover{border-color:var(--red);background:#FCE8EE;transform:none}
+  .teacher-entry-icon{border-radius:0;background:#FCE8EE;color:var(--red)}
+  .teacher-entry-hint{color:var(--muted)}
+  .teacher-screen{padding:16px 40px 32px}
+  .teacher-picker-shell{margin-top:12px;padding:24px;background:var(--card);border:1px solid var(--line);border-left:0;overflow:visible}
+  .teacher-list{gap:9px}
+  .teacher-option{min-height:50px;padding:12px 14px;border-radius:0;background:#fff;color:var(--white)}
+  .teacher-option:hover,.teacher-option:focus-visible{border-color:var(--red);background:#FCE8EE;transform:none}
+  .teacher-option-arrow{color:var(--red)}
+  .group-bubble:active{transform:scale(.985)}
+  #status{color:var(--muted);font-size:12px}
+  #status.err{color:var(--red)}
+  #linkfix{background:#FCE8EE;border:1px solid #F5C6D2;padding:18px}
+  #linkfix .hint{color:var(--muted);font-size:13px}
+  #linkfix code{background:#fff;border:1px solid var(--line);color:var(--red)}
+  #linkfix input{min-height:44px;padding:9px 12px;border:1px solid var(--line);background:#fff;color:var(--white);font:14px 'Geist',sans-serif}
+  #linkfix button{min-height:44px;background:var(--white);color:#fff;font:600 13px 'Geist',sans-serif}
+  #actions{margin:16px 0;gap:9px}
+  .back-groups{margin:18px 40px 0}
+  .day-switcher{margin:18px 40px 10px}
+  .day-nav{gap:8px}
+  .day-tab{min-height:44px;padding:9px 13px;border-radius:0;background:transparent;color:var(--muted)}
+  .day-tab:hover{border-color:var(--white);color:var(--white)}
+  .day-tab.active{background:var(--white);border-color:var(--white);color:#fff}
+  .day-tab-date{color:inherit;opacity:.75}
+  .day-tab-today{color:#fff}
+  #actions{padding:0 40px}
+  button.ghost{border-radius:0;border-color:var(--line);color:var(--muted);font-size:12px;letter-spacing:.04em;text-transform:none}
+  button.ghost:hover{border-color:var(--white);color:var(--white)}
+  button.send{border-radius:0;background:var(--red);border-color:var(--red);font:600 13px 'Geist',sans-serif}
+  button.send:hover{background:#BE123C}
+  #board{margin:0 40px 32px;display:grid;gap:18px}
+  .board-head{padding:26px 0 22px;border:0;border-bottom:2px solid var(--white);background:transparent;text-align:left}
+  .board-head .group-title{font-size:32px;font-weight:900;letter-spacing:-.035em;line-height:1.1;color:var(--white);text-transform:uppercase}
+  .board-overline{color:var(--muted);font-size:11px;letter-spacing:.06em}
+  .board-heading-row{justify-content:space-between}
+  .teacher-board-head .board-heading-row{justify-content:space-between}
+  .day{overflow:hidden;border:1px solid var(--line);border-left:0;border-radius:0;background:var(--card);box-shadow:0 2px 10px rgba(26,34,41,.025)}
+  .day.is-today{border-left:4px solid var(--red)}
+  .day-head{padding:18px 24px;background:transparent;border-bottom:2px solid var(--white)}
+  .day-title{font-size:22px;font-weight:900;letter-spacing:-.025em;color:var(--white);text-transform:uppercase}
+  .week-label{border-radius:0;border-color:var(--line);color:var(--muted)}
+  .day-date{border-radius:0;background:transparent;border-color:var(--line);color:var(--muted);font-size:12px}
+  .day.is-today .day-date{border-color:var(--red);color:var(--red)}
+  .today-label{color:var(--red);font-weight:700}
+  .lessons{background:var(--card)}
+  .lesson{grid-template-columns:140px minmax(0,1fr) auto;gap:18px;align-items:center;padding:24px 24px;border-bottom:1px solid var(--line);background:transparent}
+  .lesson.zebra{background:#F0F4F7}
+  .lesson:hover{background:#E4ECF2}
+  .num{display:flex;align-items:baseline;justify-content:flex-start;gap:12px;text-align:left}
+  .num-badge{width:auto;height:auto;margin:0;padding:0;border:0;background:transparent;color:var(--red);font-size:22px;font-weight:900;line-height:1}
+  .num-badge.vd{font-size:16px}
+  .time{margin:0;color:var(--muted);font-size:13px;line-height:1.35;white-space:nowrap}
+  .subj{color:var(--white);font-size:18px;font-weight:700;line-height:1.4;letter-spacing:-.01em}
+  .teacher{margin-top:5px;color:var(--muted);font-size:14px;line-height:1.4}
+  .teacher-link{color:var(--muted);border-bottom-color:#AEBBC5}
+  .teacher-link:hover,.teacher-link:focus-visible{color:var(--red);border-bottom-color:var(--red)}
+  .subgroup{padding:4px 8px;margin:0 0 6px;background:#FCE8EE;color:var(--red);font-size:11px;letter-spacing:.035em}
+  .room{min-width:70px;padding:7px 11px;border:1px solid var(--white);border-radius:0;background:transparent;color:var(--white);font-size:14px;font-weight:700}
+  .room div{line-height:1.3}
+  .room.empty-room{border-color:var(--line);color:var(--muted-2)}
+  .window{grid-template-columns:140px minmax(0,1fr);gap:18px;padding:18px 24px;border-bottom:1px solid var(--line);background:#F4F7FA;opacity:1}
+  .window .num-badge{border:0;color:var(--muted)}
+  .window-msg{color:var(--muted);font-size:12px;letter-spacing:.03em}
+  .window-msg span{color:var(--muted-2)}
+  .teacher-schedule-list{background:var(--card)}
+  .teacher-lesson{grid-template-columns:140px minmax(0,1fr) auto;gap:18px;padding:24px;border-bottom:1px solid var(--line);background:transparent}
+  .teacher-lesson:nth-child(even){background:#F0F4F7}
+  .teacher-lesson:nth-child(even)::before{display:none}
+  .teacher-groups{gap:6px}
+  .teacher-class{padding:5px 9px;border:1px solid var(--line);border-radius:0;background:#fff;color:var(--white);font-size:11px}
+  .teacher-subgroup{color:var(--muted);font-size:11px}
+  .teacher-room{padding:7px 11px;border-radius:0;border-color:var(--white);color:var(--white);font-size:15px}
+  .teacher-conflict-note{border-color:#C89536;border-radius:0;background:#FFF7E6;color:#70521E}
+  .favorite-button{border-radius:0;background:transparent;color:var(--muted);font-size:12px}
+  .favorite-button:hover,.favorite-button:focus-visible,.favorite-button.is-favorite{border-color:var(--red);background:#FCE8EE;color:var(--red)}
+  .favorite-star{color:var(--red)}
+  .roster-panel,.notes-page{padding:22px 24px;border:1px solid var(--line);border-left:0;border-radius:0;background:#F4F7FA}
+  .roster-panel-title,.notes-page-title{font-size:24px;font-weight:900;letter-spacing:-.02em;color:var(--white)}
+  .roster-date-label{color:var(--muted);font-size:12px}
+  .roster-editor{border-radius:0;background:#EAF0F4}
+  .roster-editor label{color:var(--muted);font-size:12px}
+  #roster-textarea,#note-textarea,#roster-copy-text{border-radius:0;border-color:var(--line);background:#fff;color:var(--white);font-size:14px}
+  .roster-editor-hint{color:var(--muted);font-size:12px}
+  .student-row{border-radius:0;border-color:var(--line);background:#fff}
+  .student-name{color:var(--white);font-size:15px}
+  .attendance-pill{border-color:var(--line);border-radius:0;background:#F4F7FA;color:var(--muted);font-size:12px}
+  .attendance-pill.is-present{border-color:#69A87A;background:#EAF6ED;color:#28623A}
+  .attendance-pill.is-present .attendance-mark{color:#28623A}
+  .attendance-pill.is-absent{border-color:var(--red);background:#FCE8EE;color:#A31736}
+  .attendance-pill.is-absent .attendance-mark{color:var(--red)}
+  .maybe-arrive{border-radius:0;border-color:var(--line);background:#F4F7FA;color:var(--muted)}
+  .maybe-arrive.is-checked{border-color:#C89536;background:#FFF7E6;color:#70521E}
+  .roster-footer{border-color:var(--line)}
+  #roster-copy{border-radius:0;border-color:var(--red);background:var(--red);color:#fff}
+  #roster-copy:hover{background:#BE123C}
+  #roster-copy-status{color:var(--muted)}
+  .roster-copy-fallback{border-radius:0;border-color:#E8D6B3;background:#FFF7E6;color:#70521E}
+  .notes-list{gap:10px}
+  .note-card{border-radius:0;border-color:var(--line);background:#fff}
+  .note-card-context{color:var(--muted);font-size:12px}
+  .note-card-text{color:var(--white);font-size:14px}
+  .note-card-actions button,.notes-page-head button,.roster-toolbar button,.roster-editor-actions button,.roster-footer button,.note-modal-actions button{border-radius:0;border-color:var(--line);background:#fff;color:var(--white);font-size:12px}
+  .note-card-actions button:hover,.notes-page-head button:hover,.roster-toolbar button:hover,.roster-editor-actions button:hover,.roster-footer button:hover,.note-modal-actions button:hover{border-color:var(--red);color:var(--red)}
+  .note-modal{background:rgba(26,34,41,.38)}
+  .note-modal-card{border:1px solid var(--line);border-top:3px solid var(--red);border-radius:0;background:var(--card);box-shadow:0 18px 60px rgba(26,34,41,.18)}
+  .note-modal-title{color:var(--white);font-size:26px;font-weight:900}
+  .note-modal-context{color:var(--muted);font-size:12px}
+  .note-modal-actions .primary-action{border-color:var(--red);background:var(--red);color:#fff}
+  .note-modal-actions .delete-action{color:var(--red)}
+  .lesson-note-button{border-radius:0;border-color:var(--line);background:transparent;color:var(--muted);font-size:11px}
+  .lesson-note-button:hover,.lesson-note-button.has-note{border-color:var(--red);background:#FCE8EE;color:var(--red)}
+  .lesson-note-preview{color:var(--muted);font-size:12px}
+  .empty{color:var(--muted);font-size:16px;font-weight:700;letter-spacing:.02em}
+  #result img{border-color:var(--line)}
+  button:disabled{opacity:.48}
+  @media(max-width:680px){
+    body{padding:12px 10px}
+    .wrap{max-width:100%;box-shadow:0 4px 18px rgba(26,34,41,.04)}
+    .display-mode-bar{padding:10px 14px;gap:8px}
+    .group-intro{padding:20px 16px 22px}
+    .teacher-screen{padding:12px 14px 24px}
+    .teacher-picker-shell{padding:16px}
+    .back-groups{margin:14px 14px 0}
+    .day-switcher{margin:14px 14px 9px}
+    #actions{padding:0 14px;justify-content:flex-start}
+    #board{margin:0 14px 24px;gap:14px}
+    .board-head{padding:20px 0 17px}
+    .board-head .group-title{font-size:26px}
+    .day-head{padding:16px}
+    .day-title{font-size:19px}
+    .lesson{grid-template-columns:minmax(0,1fr);gap:14px;align-items:start;padding:20px 16px}
+    .lesson .num,.teacher-lesson .num{display:flex;align-items:baseline;justify-content:flex-start;gap:10px}
+    .lesson .time,.teacher-lesson .time{font-size:13px}
+    .room{grid-column:1/-1;justify-self:start;display:flex;gap:7px;min-width:0;padding:7px 9px;font-size:13px}
+    .room div{border-right:1px solid var(--line);padding-right:7px}
+    .room div:last-child{border:0}
+    .window{grid-template-columns:minmax(0,1fr);gap:10px;padding:16px}
+    .teacher-lesson{grid-template-columns:minmax(0,1fr);gap:12px;padding:19px 16px}
+    .teacher-room{grid-column:1;justify-self:start}
+    .teacher-lesson-details{min-width:0}
+    .roster-panel,.notes-page{padding:16px 14px}
+    .note-card{grid-template-columns:minmax(0,1fr);padding:12px}
+    .note-card-actions{justify-content:flex-start}
+    .note-modal-card{padding:16px}
+    .student-row{grid-template-columns:minmax(0,1fr);gap:8px;padding:10px}
+  }
+
+  /* Surface contrast: use layered cool tints and soft elevation instead of dark outlines. */
+  :root{
+    --bg:#E2EAF0;
+    --card:#F5F8FA;
+    --card-2:#EAF1F5;
+    --line:#D3DFE8;
+    --line-2:#E0E8EE;
+    --muted:#60717F;
+    --muted-2:#7B8B98;
+    --muted-3:#95A3AE;
+  }
+  body{background:var(--bg)}
+  .wrap{background:#F5F8FA;border-color:#D4E0E8;box-shadow:0 8px 30px rgba(38,61,78,.07)}
+  .display-mode-bar{background:#EAF1F5;border-bottom:1px solid #D5E0E8}
+  .toolbar-actions{display:flex;align-items:center;gap:8px;min-width:0}
+  .display-mode-control{background:#DDE8F0;border-color:#CFDCE6}
+  .display-mode-button{color:#566978}
+  .display-mode-button[aria-pressed="true"]{background:#DCE8F0;border-color:#C4D5E1;color:#1A2229;box-shadow:inset 0 -2px 0 var(--red)}
+  .notes-open-button{background:#FFFFFF;border-color:#D4E0E8;color:#1A2229;box-shadow:0 1px 3px rgba(38,61,78,.05)}
+  .notes-open-button:hover,.notes-open-button:focus-visible{background:#FFF4F6;border-color:#E8BAC6;color:#A91F3B}
+  #notes-count{background:#FCE8EE;color:#B61F3E}
+  .toolbar-teacher-button{width:auto;min-height:38px;padding:7px 12px;border:1px solid #CBD9E3;border-left:3px solid var(--red);border-radius:0;background:#DDE8F0;color:#1A2229;font-size:12px;box-shadow:0 1px 3px rgba(38,61,78,.04)}
+  .toolbar-teacher-button:hover{background:#D4E2EB;border-color:#BFCFDA;transform:none}
+  .toolbar-teacher-button .teacher-entry-icon{width:22px;height:22px;background:#FCE8EE;color:var(--red)}
+  .group-intro{background:transparent}
+  .group-search{background:#FFFFFF;border-color:#D3DFE8;box-shadow:inset 0 1px 2px rgba(38,61,78,.025)}
+  #clear-filter,#clear-teacher-filter{background:#E4EDF3;border-color:#D1DEE7;color:#455967;box-shadow:0 1px 2px rgba(38,61,78,.035)}
+  #clear-filter:hover,#clear-teacher-filter:hover{background:#DDE8F0;border-color:#C7D7E2;color:#1A2229}
+  .family-filter{background:#EAF1F5;border-color:#D6E1E8;color:#4E626F}
+  .family-filter:hover,.family-filter.active{background:#DDE9F0;border-color:#C9D9E4;color:#203541}
+  .group-families{padding:15px;border:1px solid #DCE6ED;background:#EAF1F5}
+  .group-family{padding-top:15px;margin-top:13px;border-top:1px solid #D6E1E8}
+  .group-family:first-child{padding-top:0;margin-top:0;border-top:0}
+  .group-bubble{background:#FFFFFF;border-color:#D7E2E9;box-shadow:0 2px 5px rgba(38,61,78,.055)}
+  .group-bubble:hover,.group-bubble:focus-visible{background:#FFF2F5;border-color:#E8BCC7;box-shadow:0 3px 8px rgba(177,31,61,.08)}
+  .teacher-entry-button{background:#E3EDF4;color:#1A2229}
+  .teacher-picker-shell{background:#EEF3F7;border-color:#D7E2E9;box-shadow:0 2px 9px rgba(38,61,78,.035)}
+  .teacher-option{background:#FFFFFF;border-color:#D8E2E9;box-shadow:0 1px 3px rgba(38,61,78,.035)}
+  .teacher-option:hover,.teacher-option:focus-visible{background:#FFF2F5;border-color:#E8BCC7}
+  .day-tab{background:#EAF1F5;border-color:#D6E1E8;color:#526674;box-shadow:0 1px 2px rgba(38,61,78,.035)}
+  .day-tab.active{background:#FCE8EE;border-color:#EBC5CF;color:#A91F3B;box-shadow:inset 0 -2px 0 var(--red)}
+  .day-tab.active .day-tab-date{color:#A91F3B}
+  button.ghost{background:#E4EDF3;border-color:#D4E0E8;color:#425764;box-shadow:0 1px 2px rgba(38,61,78,.04)}
+  button.ghost:hover{background:#DDE8F0;border-color:#C7D7E2;color:#1A2229}
+  .back-groups{background:#E6EEF3}
+  #roster-open{background:#DDE8F0;border-color:#C9D8E2;color:#263E4B;box-shadow:0 2px 4px rgba(38,61,78,.05)}
+  #roster-open:hover{background:#D4E2EB;border-color:#BFCFDA}
+  #board{background:transparent}
+  .board-head{border-bottom:1px solid #CCD9E2;background:#EFF4F7}
+  .board-head .group-title{padding:3px 0}
+  .day{background:#FFFFFF;border-color:#D8E2E9;box-shadow:0 3px 10px rgba(38,61,78,.045)}
+  .day-head{background:#EEF3F7;border-bottom:1px solid #D5E0E8}
+  .day-title{color:#1A2229}
+  .day-date{background:#F7FAFC;border-color:#D6E1E8}
+  .day.is-today .day-date{background:#FFF2F5;border-color:#E9BCC7;color:#A91F3B}
+  .lesson{background:#FFFFFF}
+  .lesson.zebra,.teacher-lesson:nth-child(even){background:#F6F9FB}
+  .lesson:hover{background:#EAF1F5}
+  .room{background:#EEF3F7;border-color:#D5E0E8;color:#344B59;box-shadow:0 1px 2px rgba(38,61,78,.035)}
+  .room.empty-room{background:#F3F6F8;border-color:#DFE6EB;color:#8998A3}
+  .teacher-lesson{background:#FFFFFF;border-bottom-color:#E0E8EE}
+  .teacher-room{background:#EEF3F7;border-color:#D5E0E8;color:#344B59;box-shadow:0 1px 2px rgba(38,61,78,.035)}
+  .teacher-conflict-note{background:#FFF7E6;border-color:#E8D29F;color:#70521E}
+  .favorite-button{background:#FFFFFF;border-color:#D5E0E8;color:#506371;box-shadow:0 1px 3px rgba(38,61,78,.05)}
+  .favorite-button:hover,.favorite-button:focus-visible{background:#FFF4F6;border-color:#E8BAC6;color:#A91F3B}
+  .favorite-button.is-favorite{background:#FCE8EE;border-color:#EBC5CF;color:#A91F3B;box-shadow:inset 0 -2px 0 var(--red)}
+  .roster-panel,.notes-page{background:#EEF3F7;border-color:#D5E0E8;box-shadow:0 3px 10px rgba(38,61,78,.04)}
+  .student-row,.note-card{background:#FFFFFF;border-color:#D9E3EA;box-shadow:0 1px 3px rgba(38,61,78,.035)}
+  .attendance-pill{background:#F3F7F9;border-color:#D6E1E8;color:#516472}
+  .maybe-arrive{background:#F3F7F9;border-color:#D6E1E8;color:#516472}
+  .roster-copy-fallback{background:#FFF7E6;border-color:#E8D29F;color:#70521E}
+  .note-card-actions button,.notes-page-head button,.roster-toolbar button,.roster-editor-actions button,.roster-footer button,.note-modal-actions button{background:#E8F0F5;border-color:#D4E0E8;color:#334B59;box-shadow:0 1px 2px rgba(38,61,78,.035)}
+  .note-card-actions button:hover,.notes-page-head button:hover,.roster-toolbar button:hover,.roster-editor-actions button:hover,.roster-footer button:hover,.note-modal-actions button:hover{background:#DFEAF1;border-color:#C7D7E2;color:#1A2229}
+  #roster-copy{background:var(--red);border-color:var(--red);color:#FFFFFF;box-shadow:0 2px 5px rgba(225,29,72,.16)}
+  #roster-copy:hover{background:#BE123C}
+  .note-modal-card{background:#F7FAFC;border-color:#D3DFE8;box-shadow:0 18px 60px rgba(38,61,78,.18)}
+  .note-modal-actions .primary-action{background:var(--red);color:#FFFFFF}
+  @media(max-width:680px){
+    .display-mode-bar{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+    .toolbar-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:7px}
+    .notes-open-button,.toolbar-teacher-button{width:100%;min-width:0;justify-content:center;padding:7px 8px;font-size:11px}
+    .toolbar-teacher-button{gap:6px}
+    .display-mode-control{display:flex;width:100%;justify-content:stretch}
+    .display-mode-button{flex:1;min-height:38px;padding:7px 8px;font-size:11px}
+  }
+
+  /* Public TV mode hides personal/local tools and prioritizes the full group directory. */
+  body.tv-mode #open-notes,
+  body.tv-mode .favorite-button,
+  body.tv-mode #roster-open,
+  body.tv-mode #roster-panel,
+  body.tv-mode .lesson-note-tools,
+  body.tv-mode #notes-screen,
+  body.tv-mode .note-modal,
+  body.tv-mode #roster-copy-fallback{display:none!important}
+  body.tv-mode #group-screen .picker-tools,
+  body.tv-mode #teacher-screen .picker-tools{display:none!important}
+  body.tv-mode .toolbar-actions{grid-template-columns:minmax(0,1fr)}
+  body.tv-mode .toolbar-teacher-button{grid-column:1}
+  @media(min-width:681px){
+    body.tv-mode .group-families{padding:24px}
+    body.tv-mode .group-family{padding-top:21px;margin-top:20px}
+    body.tv-mode .group-family:first-child{padding-top:0;margin-top:0}
+    body.tv-mode .bubble-grid{gap:12px}
+    body.tv-mode .group-bubble{min-width:154px;min-height:76px;padding:14px 18px;font-size:20px;gap:10px}
+    body.tv-mode .bubble-label{font-size:14px}
+    body.tv-mode .bubble-course{font-size:24px;font-weight:900;letter-spacing:-.03em}
+    body.tv-mode .bubble-dot{width:9px;height:9px}
+    body.tv-mode .teacher-list{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+    body.tv-mode .teacher-option{min-height:72px;padding:18px 20px}
+    body.tv-mode .teacher-option-name{font-size:20px;font-weight:700}
+  }
+  @media(max-width:680px){
+    body.tv-mode .group-bubble{min-height:56px;min-width:122px;padding:12px 14px;font-size:17px}
+    body.tv-mode .bubble-course{font-size:20px;font-weight:800}
+    body.tv-mode .teacher-list{grid-template-columns:1fr}
+    body.tv-mode .teacher-option{min-height:58px;padding:14px 16px}
+    body.tv-mode .teacher-option-name{font-size:16px}
+  }
+
+  /* KKST toolbar mark and clearer schedule cues */
+  .toolbar-brand{display:flex;align-items:center;gap:9px;min-width:0}
+  .kkst-logo{display:block;width:48px;height:48px;object-fit:contain;padding:3px;border:1px solid #D4E0E8;background:#fff;box-shadow:0 2px 6px rgba(38,61,78,.08)}
+  .board-heading-row,.teacher-board-head .board-heading-row{justify-content:flex-start;gap:14px}
+  .board-heading-row .favorite-button{flex:0 0 auto}
+  .day-head .day-date{display:flex;align-items:center;gap:8px}
+  .day.is-today .day-date{background:#FFF2F5;border-color:#E9BCC7;color:#526371}
+  .today-label{display:inline-flex;align-items:center;min-height:22px;margin:0;padding:3px 8px;background:#B61F3E;color:#fff;border-radius:999px;font:800 10px/1 'Geist',sans-serif;letter-spacing:.06em}
+  .room-wrap,.teacher-room-wrap{display:flex;align-items:center;justify-self:end;gap:9px;min-width:0}
+  .current-lesson-label{display:inline-flex;align-items:center;min-height:27px;padding:5px 9px;border-radius:999px;background:#FCE8EE;color:#A91F3B;border:1px solid #EBC5CF;font:800 10px/1 'Geist',sans-serif;letter-spacing:.035em;white-space:nowrap}
+  .current-lesson-label[hidden]{display:none!important}
+  .lesson.is-current,.teacher-lesson.is-current{background:#FFF7F8;box-shadow:inset 4px 0 0 #B61F3E}
+  @media(max-width:680px){
+    .toolbar-brand{gap:6px}
+    .kkst-logo{width:42px;height:42px;padding:2px}
+    .toolbar-actions{grid-template-columns:minmax(0,1fr) minmax(0,1.35fr)}
+    .lesson .room-wrap,.teacher-lesson .teacher-room-wrap{grid-column:1/-1;justify-self:start;flex-wrap:wrap}
+    .room-wrap .room,.teacher-room-wrap .teacher-room{grid-column:auto;justify-self:auto}
+    .board-head{padding:18px 16px 16px}
+  }
+  .board-head{padding:22px 28px 20px}
+  @media(max-width:680px){.board-head{padding:18px 16px 16px}}
+
+  .activity-live{position:relative;overflow:hidden;margin:12px 40px 18px;padding:18px 20px;border:1px solid #D5E0E8;border-left:5px solid #B61F3E;background:linear-gradient(115deg,#FFFFFF 0%,#F8FBFD 72%,#FCEEF2 100%);box-shadow:0 5px 18px rgba(38,61,78,.07)}
+  .activity-live[hidden]{display:none!important}
+  .activity-live-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+  .activity-live-brand{display:flex;align-items:center;gap:8px;color:#60717F;font:800 10px/1 'Geist',sans-serif;letter-spacing:.12em;text-transform:uppercase}
+  .activity-live-pulse{width:9px;height:9px;border-radius:50%;background:#B61F3E;box-shadow:0 0 0 5px #FCE8EE;animation:activity-pulse 1.6s infinite}
+  @keyframes activity-pulse{50%{box-shadow:0 0 0 8px rgba(252,232,238,.45)}}
+  .activity-live-clock{color:#233B49;font:700 16px/1 'Geist',sans-serif;font-variant-numeric:tabular-nums}
+  .activity-live-state{display:inline-flex;align-items:center;gap:7px;margin-bottom:8px;padding:6px 9px;background:#FCE8EE;color:#A91F3B;font:900 10px/1 'Geist',sans-serif;letter-spacing:.07em}
+  .activity-live.is-break .activity-live-state{background:#FFF5DE;color:#805C1E}
+  .activity-live.is-finished .activity-live-state,.activity-live.is-empty .activity-live-state{background:#EAF1F5;color:#536A78}
+  .activity-live-title{color:#1A2229;font:800 clamp(20px,2.2vw,28px)/1.2 'Geist',sans-serif;letter-spacing:-.025em}
+  .activity-live-main-row{display:flex;justify-content:space-between;align-items:center;gap:18px}
+  .activity-live-copy{flex:1;min-width:0}
+  .activity-live-detail{margin-top:5px;color:#526674;font:13px/1.45 'Geist',sans-serif}
+  .activity-live-room{display:flex;flex:0 0 auto;flex-direction:column;align-items:flex-end;gap:4px;margin-left:auto;padding:8px 12px;border-left:3px solid #B61F3E;background:#FCE8EE;color:#60717F;text-align:right}
+  .activity-live-room span{font:800 9px/1 'Geist',sans-serif;letter-spacing:.08em}
+  .activity-live-room strong{color:#A91F3B;font:900 20px/1 'Geist',sans-serif;font-variant-numeric:tabular-nums}
+  .activity-live-timer{margin-top:12px;color:#334B59;font:700 13px/1.4 'Geist',sans-serif;font-variant-numeric:tabular-nums}
+  .activity-progress{height:6px;margin-top:9px;overflow:hidden;background:#E5EDF2}
+  .activity-progress span{display:block;height:100%;background:#B61F3E;transition:width .35s linear}
+  .activity-live.is-break .activity-progress span{background:#D4A544}
+  .activity-next{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:13px;padding-top:10px;border-top:1px solid #E1E9EF;color:#526674;font:12px/1.4 'Geist',sans-serif}
+  .activity-next strong{color:#203541}
+  .activity-next .activity-live-room{padding:5px 8px}
+  .activity-next .activity-live-room strong{font-size:14px}
+  .lesson.is-past,.teacher-lesson.is-past{background:#F6F9FB}
+  .lesson.is-past .current-lesson-label,.teacher-lesson.is-past .current-lesson-label{background:#EDF2F5;border-color:#DCE5EB;color:#6B7D89}
+  .lesson.is-next .current-lesson-label,.teacher-lesson.is-next .current-lesson-label{background:#E7F3EB;border-color:#C9E2D0;color:#28623A}
+  .notes-search-wrap{display:flex;align-items:center;gap:10px;min-height:46px;margin:0 0 14px;padding:0 13px;border:1px solid #D5E0E8;background:#fff;color:#A91F3B}
+  .notes-search-wrap>span:first-child{font-size:20px}
+  .notes-search-wrap input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#1A2229;font:14px 'Geist',sans-serif}
+  .notes-search-wrap input::placeholder{color:#82919C}
+  .notes-filter-count{color:#637784;font:11px 'Geist',sans-serif;white-space:nowrap}
+  .notes-backup{margin-top:28px;border-top:1px solid #D5E0E8;padding-top:10px;color:#748592}
+  .notes-backup summary{width:max-content;max-width:100%;cursor:pointer;color:#778894;font:11px 'Geist',sans-serif;opacity:.8}
+  .notes-backup p{max-width:720px;color:#667985;font:12px/1.5 'Geist',sans-serif}
+  #notes-json{display:block;width:100%;min-height:150px;resize:vertical;padding:10px;border:1px solid #D7E2E9;background:#FAFCFD;color:#334B59;font:11px/1.45 ui-monospace,monospace}
+  .notes-backup-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+  .notes-backup-actions button{min-height:34px;padding:6px 10px;border:1px solid #D4E0E8;background:#EAF1F5;color:#405866;font:11px 'Geist',sans-serif;cursor:pointer}
+  #notes-backup-status{min-height:17px;margin-top:6px;color:#60717F;font:11px 'Geist',sans-serif}
+  .notes-ics-export{margin-top:14px;border-top:1px solid #D5E0E8;padding-top:10px;color:#748592}
+  .notes-ics-export summary{width:max-content;max-width:100%;cursor:pointer;color:#778894;font:11px 'Geist',sans-serif;opacity:.8}
+  .notes-ics-export p{max-width:720px;color:#667985;font:12px/1.5 'Geist',sans-serif}
+  .ics-export-controls{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:9px;max-width:680px}
+  .ics-export-controls>label:first-child{color:#435967;font:600 12px 'Geist',sans-serif}
+  #ics-export-source{min-height:40px;padding:7px 9px;border:1px solid #D4E0E8;background:#fff;color:#263E4B;font:13px 'Geist',sans-serif}
+  .ics-alarm-option{grid-column:1/-1;display:flex;align-items:center;gap:8px;color:#526674;font:12px 'Geist',sans-serif}
+  .ics-alarm-option input{width:17px;height:17px;accent-color:#B61F3E}
+  #ics-export-button{grid-column:1/-1;justify-self:start;min-height:38px;padding:8px 14px;border:1px solid #B61F3E;background:#B61F3E;color:#fff;font:700 12px 'Geist',sans-serif;cursor:pointer}
+  #ics-export-button:disabled{opacity:.5;cursor:not-allowed}
+  #ics-export-status{min-height:17px;margin-top:6px;color:#60717F;font:11px 'Geist',sans-serif}
+  .tv-cycle-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .tv-cycle-controls[hidden]{display:none!important}
+  .tv-cycle-controls span{color:#526674;font:600 11px 'Geist',sans-serif}
+  .tv-cycle-controls button{min-height:34px;padding:6px 10px;border:1px solid #C9D8E2;background:#fff;color:#334B59;font:600 11px 'Geist',sans-serif;cursor:pointer}
+  body.kiosk-tv-mode .display-mode-control{display:none!important}
+  body.tv-mode .activity-live{margin:18px 40px 24px;padding:24px 28px}
+  body.tv-mode .activity-live-title{font-size:clamp(28px,3vw,40px)}
+  body.tv-mode .activity-live-state{font-size:14px;padding:9px 12px}
+  body.tv-mode .activity-live-detail,body.tv-mode .activity-live-timer,body.tv-mode .activity-next{font-size:16px}
+  body.tv-mode .activity-live-clock{font-size:22px}
+  @media(max-width:680px){
+    .activity-live{margin:10px 14px 16px;padding:15px 14px}
+    .activity-live-top{margin-bottom:9px}
+    .activity-live-title{font-size:21px}
+    .activity-live-main-row{align-items:flex-start;gap:8px}
+    .activity-live-room{padding:6px 8px}
+    .activity-live-room strong{font-size:16px}
+    .activity-live-detail{font-size:12px}
+    .activity-live-clock{font-size:14px}
+    .notes-search-wrap{align-items:flex-start;flex-wrap:wrap;padding:9px 11px}
+    .notes-filter-count{width:100%;padding-left:30px}
+    .notes-backup-actions button{flex:1}
+    .ics-export-controls{grid-template-columns:minmax(0,1fr)}
+    .ics-export-controls>label:first-child,.ics-alarm-option,#ics-export-button{grid-column:1}
+    #ics-export-button{width:100%}
+    .tv-cycle-controls{justify-content:center}
+    .tv-cycle-controls button{min-height:40px}
+    body.tv-mode .activity-live{margin:12px 14px 17px;padding:16px 14px}
+    body.tv-mode .activity-live-title{font-size:23px}
+    body.tv-mode .activity-live-detail,body.tv-mode .activity-live-timer,body.tv-mode .activity-next{font-size:13px}
+  }
+  .day-tab-today{display:inline-flex;align-items:center;min-height:22px;padding:4px 7px;border:1px solid #EBC5CF;border-radius:999px;background:#FCE8EE;color:#A91F3B;font:800 9px/1 'Geist',sans-serif;letter-spacing:.04em;white-space:nowrap}
+  body.tv-mode .day-tab-today{font-size:11px;padding:5px 9px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Расписание ККСТ</h1>
-  <p class="sub">Данные: файл «Расписание занятий на текущую дату» с сайта техникума — поддержка Яндекс.Диск и Google Drive/Документы</p>
-
-  <div class="panel">
-    <input id="group" type="text" list="grouplist" placeholder="Группа, напр. ВВ-241"
-           autocomplete="off" spellcheck="false" enterkeyhint="go">
-    <datalist id="grouplist"></datalist>
-    <button id="go">Показать</button>
+  <div class="display-mode-bar">
+    <div class="toolbar-actions">
+      <div class="toolbar-brand">
+        <img class="kkst-logo" src="kkst-logo.png" alt="Логотип ККСТ" width="48" height="48">
+        <button id="open-notes" class="notes-open-button" type="button">Заметки <span id="notes-count" aria-label="Количество заметок">0</span></button>
+      </div>
+      <button id="open-teachers" class="teacher-entry-button toolbar-teacher-button" type="button" aria-label="Расписание преподавателей" title="Расписание преподавателей" disabled><span class="teacher-entry-icon" aria-hidden="true">↗</span><span>Преподаватели</span></button>
+    </div>
+    <div class="tv-cycle-controls" id="tv-cycle-controls" hidden aria-label="Управление автоэфиром">
+      <span id="tv-cycle-state">Автоэфир включён</span>
+      <button id="tv-cycle-pause" type="button">Пауза</button>
+      <button id="tv-cycle-next" type="button">Следующий экран</button>
+    </div>
+    <div class="display-mode-control" role="group" aria-label="Режим отображения">
+      <button id="mode-normal" class="display-mode-button" type="button" aria-pressed="true">Обычный режим</button>
+      <button id="mode-tv" class="display-mode-button" type="button" aria-pressed="false">Телевизор</button>
+    </div>
   </div>
+  <section id="group-screen" class="group-intro">
+      <div class="picker-meta"><span class="live-dot" aria-hidden="true"></span><span id="group-count" aria-live="polite">— групп</span></div>
+      <div class="picker-tools">
+        <label class="group-search">
+          <span class="search-mark" aria-hidden="true">⌕</span>
+          <input id="group-filter" type="search" placeholder="Поиск группы…" autocomplete="off" spellcheck="false" aria-label="Фильтр групп">
+        </label>
+        <button id="clear-filter" type="button">Очистить</button>
+      </div>
+      <nav id="family-nav" class="family-nav" aria-label="Фильтр по направлению"></nav>
+      <div id="group-bubbles" class="group-families"></div>
+      <div id="group-empty" class="group-empty" style="display:none">НЕТ СОВПАДЕНИЙ — ИЗМЕНИ ФИЛЬТР</div>
+      <div id="status" aria-live="polite"></div>
+  </section>
 
-  <div class="chips" id="chips"></div>
-  <div id="status">Загружаю расписание…</div>
+  <section id="teacher-screen" class="teacher-screen" style="display:none">
+    <button id="teacher-back-groups" class="ghost back-groups" type="button">← К ГРУППАМ</button>
+    <div class="teacher-picker-shell">
+      <div class="teacher-picker-meta"><span class="live-dot" aria-hidden="true"></span><span id="teacher-count">Преподаватели</span></div>
+      <div class="picker-tools">
+        <label class="group-search">
+          <span class="search-mark" aria-hidden="true">⌕</span>
+          <input id="teacher-filter" type="search" placeholder="Поиск преподавателя…" autocomplete="off" spellcheck="false" aria-label="Фильтр преподавателей">
+        </label>
+        <button id="clear-teacher-filter" type="button">Очистить</button>
+      </div>
+      <div id="teacher-list" class="teacher-list"></div>
+      <div id="teacher-empty" class="group-empty" style="display:none">НЕТ СОВПАДЕНИЙ — ИЗМЕНИ ФИЛЬТР</div>
+    </div>
+  </section>
 
   <div id="linkfix" class="panel" style="display:none">
     <div class="hint">
-      Автоматически найти файл не удалось (техникум поменял ссылку или сработала защита от зарубежных IP).<br>
-      Откройте <a href="https://kkst.kemobl.ru/studentam/raspisanie/" target="_blank">страницу расписания</a>,
-      нажмите правой кнопкой на ссылку «Расписание занятий на текущую дату» → <b>Копировать ссылку</b><br>
-      и вставьте сюда. Поддерживаются ссылки вида:<br>
-      <code>https://disk.yandex.ru/d/...</code> · <code>https://docs.yandex.ru/docs/view?url=ya-disk-public://...</code><br>
-      <code>https://drive.google.com/file/d/1A2B.../view</code> · <code>https://docs.google.com/spreadsheets/d/1A2B.../edit</code>
+      Автоматически найти файл не удалось — сработала защита UserGate.<br>
+      Открой <a href="https://kkst.kemobl.ru/studentam/raspisanie/" target="_blank">страницу расписания</a> → ПКМ на «Расписание занятий на текущую дату» → <b>Копировать ссылку</b> и вставь:
+      <br><code>disk.yandex.ru/d/…</code> · <code>ya-disk-public://…</code> · <code>drive.google.com/file/d/…</code> · <code>docs.google.com/spreadsheets/d/…</code>
     </div>
-    <input id="manuallink" type="text" placeholder="Вставьте ссылку с сайта техникума сюда..."
-           style="text-transform:none">
-    <button id="linkgo">Применить</button>
+    <input id="manuallink" type="text" placeholder="https://docs.google.com/spreadsheets/d/...">
+    <button id="linkgo">ПРИМЕНИТЬ</button>
   </div>
 
-  <div id="actions">
-    <button id="send" class="send" style="display:none">📤 Отправить в чат</button>
-    <a id="dl" style="display:none; text-decoration:none"><button class="ghost">⬇ Скачать PNG</button></a>
-    <button id="refresh" class="ghost">⟳ Обновить данные</button>
+  <section id="schedule-screen" style="display:none">
+    <button id="back-groups" class="ghost back-groups">← ВСЕ ГРУППЫ</button>
+    <div class="day-switcher" aria-label="Выбор дня расписания">
+      <nav id="day-nav" class="day-nav" aria-label="Дни расписания"></nav>
+    </div>
+    <section id="activity-live" class="activity-live" hidden aria-label="Текущее состояние расписания"></section>
+    <div id="actions">
+      <button id="roster-open" class="ghost" type="button" style="display:none" aria-expanded="false" aria-controls="roster-panel">Ученики</button>
+      <button id="send" class="send" style="display:none">📤 ОТПРАВИТЬ В ЧАТ</button>
+      <a id="dl" style="display:none"><button class="ghost">⬇ СКАЧАТЬ PNG</button></a>
+      <button id="refresh" class="ghost">⟳ ОБНОВИТЬ ДАННЫЕ</button>
+    </div>
+    <section id="roster-panel" class="roster-panel" hidden aria-label="Список учеников группы">
+      <div class="roster-panel-head">
+        <div><h2 class="roster-panel-title">Ученики</h2><div id="roster-date-label" class="roster-date-label"></div></div>
+        <div class="roster-toolbar">
+          <span id="roster-count" class="roster-date-label"></span>
+          <button id="roster-edit" type="button">Изменить список</button>
+        </div>
+      </div>
+      <div id="roster-editor" class="roster-editor" hidden>
+        <label for="roster-textarea">Фамилия и имя — по одному ученику на строку</label>
+        <textarea id="roster-textarea" spellcheck="false" placeholder="Иванов Иван&#10;Петрова Анна"></textarea>
+        <div class="roster-editor-hint">Список хранится только в этом браузере. Сохранение нового списка не меняет выбранные отметки текущего дня для совпадающих фамилий.</div>
+        <div class="roster-editor-actions"><button id="roster-save" type="button">Сохранить список</button><button id="roster-cancel" type="button">Отмена</button></div>
+      </div>
+      <div id="roster-list" class="roster-list"></div>
+      <div class="roster-footer"><span id="roster-copy-status" class="roster-copy-status" aria-live="polite"></span><button id="roster-copy" type="button">Скопировать отмеченных</button></div>
+      <div id="roster-copy-fallback" class="roster-copy-fallback" hidden><div>Автокопирование запрещено браузером. Текст выделен — скопируйте его вручную.</div><textarea id="roster-copy-text" readonly aria-label="Текст списка для копирования"></textarea></div>
+    </section>
+    <main id="board"></main>
+  </section>
+
+  <section id="notes-screen" class="notes-page" hidden>
+    <div class="notes-page-head"><div><h2 class="notes-page-title">Заметки по парам</h2><div class="roster-date-label">Заметки сохранены только в этом браузере</div></div><button id="notes-close" type="button">Вернуться</button></div>
+    <label class="notes-search-wrap" for="notes-search"><span aria-hidden="true">⌕</span><input id="notes-search" type="search" placeholder="Поиск по группе, дате или тексту заметки…" autocomplete="off"><span id="notes-filter-count" class="notes-filter-count"></span></label>
+    <div id="notes-list" class="notes-list"></div>
+    <div id="notes-empty" class="empty" hidden>ЗАМЕТОК ПОКА НЕТ</div>
+    <div id="notes-no-results" class="empty" hidden>ПО ЭТОМУ ЗАПРОСУ НИЧЕГО НЕ НАЙДЕНО</div>
+    <details class="notes-backup">
+      <summary>Резервная копия заметок</summary>
+      <p>Скопируйте JSON, чтобы сохранить заметки отдельно, или вставьте ранее сохранённый JSON и объедините его с текущими заметками.</p>
+      <textarea id="notes-json" spellcheck="false" aria-label="JSON с резервной копией заметок" placeholder="Нажмите «Подготовить JSON» или вставьте резервную копию"></textarea>
+      <div class="notes-backup-actions"><button id="notes-json-export" type="button">Подготовить JSON</button><button id="notes-json-copy" type="button">Скопировать JSON</button><button id="notes-json-import" type="button">Восстановить из JSON</button></div>
+      <div id="notes-backup-status" aria-live="polite"></div>
+    </details>
+    <details class="notes-ics-export">
+      <summary>Экспорт расписания в календарь (.ics)</summary>
+      <p>Файл включает пары выбранной группы или преподавателя на все даты, которые сейчас есть в загруженном расписании. Время берётся по часовому поясу устройства.</p>
+      <div class="ics-export-controls"><label for="ics-export-source">Расписание</label><select id="ics-export-source" disabled><option value="">Загрузка расписания…</option></select><label class="ics-alarm-option"><input id="ics-export-alarm" type="checkbox" checked> Напоминать в начале пары (если приложение календаря поддерживает)</label><button id="ics-export-button" type="button" disabled>Скачать .ics</button></div>
+      <div id="ics-export-status" aria-live="polite"></div>
+    </details>
+  </section>
+
+  <div id="note-modal" class="note-modal" hidden>
+    <section class="note-modal-card" role="dialog" aria-modal="true" aria-labelledby="note-modal-title">
+      <h2 id="note-modal-title" class="note-modal-title">Заметка к паре</h2>
+      <div id="note-modal-context" class="note-modal-context"></div>
+      <textarea id="note-textarea" placeholder="Заметка или домашнее задание…"></textarea>
+      <div class="note-modal-actions"><button id="note-delete" class="delete-action" type="button">Удалить</button><button id="note-cancel" type="button">Отмена</button><button id="note-save" class="primary-action" type="button">Сохранить</button></div>
+    </section>
   </div>
 
-  <div id="result"><img id="img" alt="" style="display:none"></div>
-  <canvas id="cv"></canvas>
+  <div id="result">
+    <img id="img" alt="">
+    <canvas id="cv"></canvas>
+  </div>
+
 </div>
 
 <script src="xlsx.full.min.js"></script>
@@ -94,6 +1023,6 @@
 <script src="parser.js"></script>
 <script src="render.js"></script>
 <script src="app.js"></script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d269f018218dd4',t:'MTc5MjQ0MDQ5Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
+</body>
 </html>
