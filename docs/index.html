@@ -46,12 +46,14 @@
     border-radius:999px; padding:4px 9px; cursor:pointer; user-select:none;
   }
   canvas { display:none; }
+  .hint { width:100%; font-size:13px; color:#374151; line-height:1.4; }
+  .hint code { background:#f3f4f6; padding:1px 5px; border-radius:6px; font-size:12px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Расписание ККСТ</h1>
-  <p class="sub">Данные: файл «Расписание занятий на текущую дату» (Яндекс.Диск техникума)</p>
+  <p class="sub">Данные: файл «Расписание занятий на текущую дату» с сайта техникума — поддержка Яндекс.Диск и Google Drive/Документы</p>
 
   <div class="panel">
     <input id="group" type="text" list="grouplist" placeholder="Группа, напр. ВВ-241"
@@ -64,12 +66,15 @@
   <div id="status">Загружаю расписание…</div>
 
   <div id="linkfix" class="panel" style="display:none">
-    <div style="width:100%; font-size:13px; color:#92400e">
-      Автоматически найти файл не удалось. Откройте
-      <a href="https://kkst.kemobl.ru/studentam/raspisanie/" target="_blank">страницу расписания</a>,
-      скопируйте адрес ссылки «Расписание занятий на текущую дату» и вставьте сюда:
+    <div class="hint">
+      Автоматически найти файл не удалось (техникум поменял ссылку или сработала защита от зарубежных IP).<br>
+      Откройте <a href="https://kkst.kemobl.ru/studentam/raspisanie/" target="_blank">страницу расписания</a>,
+      нажмите правой кнопкой на ссылку «Расписание занятий на текущую дату» → <b>Копировать ссылку</b><br>
+      и вставьте сюда. Поддерживаются ссылки вида:<br>
+      <code>https://disk.yandex.ru/d/...</code> · <code>https://docs.yandex.ru/docs/view?url=ya-disk-public://...</code><br>
+      <code>https://drive.google.com/file/d/1A2B.../view</code> · <code>https://docs.google.com/spreadsheets/d/1A2B.../edit</code>
     </div>
-    <input id="manuallink" type="text" placeholder="https://docs.yandex.ru/docs/view?url=..."
+    <input id="manuallink" type="text" placeholder="Вставьте ссылку с сайта техникума сюда..."
            style="text-transform:none">
     <button id="linkgo">Применить</button>
   </div>
@@ -90,5 +95,5 @@
 <script src="render.js"></script>
 <script src="app.js"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d269f018218dd4',t:'MTc5MjQ0MDQ5Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
