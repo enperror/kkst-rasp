@@ -5,11 +5,11 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  // палитра
-  const BG = "#f5f7fa", CARD = "#ffffff", ACCENT = "#2563eb", ACCENT_DARK = "#1e40af";
-  const TEXT = "#111827", MUTED = "#6b7280", LINE = "#e5e7eb", ZEBRA = "#f8fafc";
-  const SUB_BADGE = "#dbeafe", BADGE_BG = "#eff6ff", BADGE_LN = "#bfdbfe";
-  const WIN_BG = "#fef9e7", WIN_TX = "#a18015", WIN_LN = "#fae5a0";
+  // Light editorial palette from the supplied visual reference; PNG drawing behavior is unchanged.
+  const BG = "#EBF1F5", CARD = "#F4F7FA", ACCENT = "#E11D48", ACCENT_DARK = "#BE123C";
+  const TEXT = "#1A2229", MUTED = "#627280", LINE = "#D3DFE9", ZEBRA = "#EDF2F6";
+  const SUB_BADGE = "#FCE8EE", BADGE_BG = "#F4F7FA", BADGE_LN = "#E11D48";
+  const WIN_BG = "#EEF3F7", WIN_TX = "#627280", WIN_LN = "#D3DFE9";
 
   // расписание звонков; '0' = ВД
   const TIMES_WEEKDAY = {
@@ -23,20 +23,22 @@
   };
   const PAIR_ORDER = ["1", "2", "3", "0", "4", "5", "6", "7"];
 
-  const FF = "Arial, 'Segoe UI', Roboto, sans-serif";
+  const FF = "'Geist', Arial, sans-serif";
+  const DISPLAY = "'Geist', Arial, sans-serif";
+  const MONO = "'Geist', Arial, sans-serif";
   const F = {
-    title: "bold 34px " + FF,
-    day: "bold 22px " + FF,
-    num: "bold 22px " + FF,
-    time: "14px " + FF,
-    subj: "19px " + FF,
-    small: "16px " + FF,
-    room: "bold 19px " + FF,
-    win: "italic 17px " + FF,
+    title: "900 36px " + DISPLAY,
+    day: "900 22px " + FF,
+    num: "700 22px " + DISPLAY,
+    time: "500 13px " + MONO,
+    subj: "700 18px " + FF,
+    small: "13px " + MONO,
+    room: "700 16px " + DISPLAY,
+    win: "13px " + MONO,
   };
 
-  const W = 1000, PAD = 32, COL_NUM = 104, COL_ROOM = 130;
-  const ROW_PAD = 14, LH_SUBJ = 26, LH_SMALL = 22, WIN_H = 46, MIN_ROW_H = 100;
+  const W = 1000, PAD = 40, COL_NUM = 140, COL_ROOM = 130;
+  const ROW_PAD = 20, LH_SUBJ = 28, LH_SMALL = 22, WIN_H = 52, MIN_ROW_H = 112;
 
   function timesFor(dateStr) {
     if (dateStr) {
@@ -80,12 +82,9 @@
   }
 
   function rr(ctx, x0, y0, x1, y1, r) {
+    // Square corners, matching the supplied editorial UI.
     ctx.beginPath();
-    ctx.moveTo(x0 + r, y0);
-    ctx.arcTo(x1, y0, x1, y1, r);
-    ctx.arcTo(x1, y1, x0, y1, r);
-    ctx.arcTo(x0, y1, x0, y0, r);
-    ctx.arcTo(x0, y0, x1, y0, r);
+    ctx.rect(x0, y0, x1 - x0, y1 - y0);
     ctx.closePath();
   }
 
@@ -94,6 +93,9 @@
     ctx.font = font; ctx.fillStyle = color; ctx.textBaseline = "top";
     ctx.fillText(text, x, y);
   }
+
+  // The supplied light design is intentionally clean: no halftone texture.
+  function halftone(ctx, x, y, w, h, step = 11, alpha = 0.12) {}
 
   // group: имя; days: [{title, date, lessons:[{number, entries}]}]
   // canvas: существующий canvas (будет перенастроен). Возвращает canvas.
@@ -129,22 +131,26 @@
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, totalH);
 
-    // шапка
+    // Шапка: тёмная плашка, красная метка и halftone только поверх неё.
     let y = PAD;
-    rr(ctx, PAD - 8, y - 8, W - PAD + 8, y + 52, 14);
-    ctx.fillStyle = ACCENT; ctx.fill();
-    txt(ctx, PAD + 12, y + 2, group, F.title, "#ffffff");
-    const label = "расписание занятий";
-    txt(ctx, W - PAD - tw(ctx, label, F.small) - 12, y + 18, label, F.small, "#dbeafe");
+    rr(ctx, PAD - 8, y - 8, W - PAD + 8, y + 52, 8);
+    ctx.fillStyle = CARD; ctx.fill(); ctx.strokeStyle = LINE; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = ACCENT; ctx.fillRect(PAD - 8, y - 8, 4, 60);
+    halftone(ctx, PAD - 4, y - 7, W - 2 * PAD + 8, 58, 10, 0.15);
+    txt(ctx, PAD + 12, y + 2, group, F.title, TEXT);
+    const label = "ККСТ // РАСПИСАНИЕ";
+    txt(ctx, W - PAD - tw(ctx, label, F.small) - 12, y + 18, label, F.small, MUTED);
     y += 56 + 10;
 
     for (const [d, rows, heights, blockH] of dayBlocks) {
       const times = timesFor(d.date);
 
-      rr(ctx, PAD - 8, y, W - PAD + 8, y + blockH, 14);
+      rr(ctx, PAD - 8, y, W - PAD + 8, y + blockH, 8);
       ctx.fillStyle = CARD; ctx.fill();
       ctx.strokeStyle = LINE; ctx.lineWidth = 1; ctx.stroke();
-      txt(ctx, PAD + 8, y + 10, d.title, F.day, ACCENT_DARK);
+      ctx.fillStyle = ACCENT; ctx.fillRect(PAD - 8, y, 3, blockH);
+      halftone(ctx, PAD - 5, y + 1, W - 2 * PAD + 10, 42, 9, 0.14);
+      txt(ctx, PAD + 8, y + 10, d.title, F.day, TEXT);
       let yy = y + 44;
 
       if (!rows.length) {
@@ -179,6 +185,7 @@
         if (i % 2 === 1) {
           ctx.fillStyle = ZEBRA;
           ctx.fillRect(PAD - 7, yy, W - 2 * PAD + 14, rh);
+          halftone(ctx, PAD - 6, yy, W - 2 * PAD + 12, rh, 9, 0.1);
         }
 
         // бейдж номера + время
