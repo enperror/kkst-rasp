@@ -196,14 +196,14 @@
       } catch (e) {}
     }
 
-    // 3) резервный из config.js (yandex)
-    if (FALLBACK_KEY) {
-      chain.push(["резервная ссылка (Яндекс)", { type: "yandex", provider: "yandex", key: FALLBACK_KEY, url: FALLBACK_KEY }]);
-    }
-    // 3b) резервный Google из config.js — сработает когда сайт банится (как сейчас)
+    // 3) резервный из config.js — ПРИОРИТЕТ GOOGLE (свежее), Яндекс как последний fallback
+    // Сейчас сайт банится, а старый Яндекс ключ от 12.10.2026 устарел на неделю — гугл от 19.10 свежее
     if (FALLBACK_GOOGLE) {
       const src = extractSourceFromLink(FALLBACK_GOOGLE);
       if (src) chain.push(["резервная ссылка (Google)", src]);
+    }
+    if (FALLBACK_KEY) {
+      chain.push(["резервная ссылка (Яндекс)", { type: "yandex", provider: "yandex", key: FALLBACK_KEY, url: FALLBACK_KEY }]);
     }
 
     let lastErr = null;
