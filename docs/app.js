@@ -19,6 +19,7 @@
   const inTelegram = !!(tg && tg.initDataUnsafe && tg.initDataUnsafe.user);
   const WORKER = (window.CONFIG.WORKER_URL || "").replace(/\/+$/, "");
   const FALLBACK_KEY = window.CONFIG.FALLBACK_PUBLIC_KEY || "";
+  const FALLBACK_GOOGLE = window.CONFIG.FALLBACK_GOOGLE_URL || "";
 
   if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
@@ -198,6 +199,11 @@
     // 3) резервный из config.js (yandex)
     if (FALLBACK_KEY) {
       chain.push(["резервная ссылка (Яндекс)", { type: "yandex", provider: "yandex", key: FALLBACK_KEY, url: FALLBACK_KEY }]);
+    }
+    // 3b) резервный Google из config.js — сработает когда сайт банится (как сейчас)
+    if (FALLBACK_GOOGLE) {
+      const src = extractSourceFromLink(FALLBACK_GOOGLE);
+      if (src) chain.push(["резервная ссылка (Google)", src]);
     }
 
     let lastErr = null;
