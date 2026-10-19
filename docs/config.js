@@ -1,16 +1,12 @@
 // Конфигурация приложения (публичная — секретов здесь НЕТ).
 window.CONFIG = {
-  // URL вашего Cloudflare Worker (см. worker/worker.js и README).
-  // Воркер хранит токен бота и достаёт свежую ссылку на файл с сайта ККСТ.
-  // Пример: "https://kkst-rasp.ваш-логин.workers.dev"
-  // Пусто — приложение работает в режиме «только скачать PNG»
-  // на резервном ключе.
   WORKER_URL: "https://kkst-rasp.vadimshirokikh22.workers.dev",
 
-  // Резервный публичный ключ Яндекс.Диска — используется, если воркер
-  // недоступен или не смог достать свежую ссылку с сайта техникума.
-  // Ссылка на сайте меняется, так что это именно запасной вариант —
-  // основной путь: воркер каждый раз берёт актуальную ссылку со страницы
-  // https://kkst.kemobl.ru/studentam/raspisanie/
+  // Резервный публичный ключ Яндекс.Диска — старый, сработает если техникум вернётся на Яндекс
   FALLBACK_PUBLIC_KEY: "G2u6am+aPfLVjN4bBQx5se4CgvhZz7fJrbYFk8rQhVrCHXWHDKYdDWALjqMHzZ+wq/J6bpmRyOJonT3VoXnDag==",
+
+  // НОВОЕ v2.1: резервная Google-таблица — срабатывает когда сайт техникума банится UserGate (как сейчас)
+  // Твоя актуальная ссылка: 1Zpi_zeo3whDWeX1QqX7oFYnoeDTRh15XGjFyB3cgW8E — 19-20.10.2026
+  // Если техникум поменяет таблицу, просто поменяй ID здесь и запушь
+  FALLBACK_GOOGLE_URL: "https://docs.google.com/spreadsheets/d/1Zpi_zeo3whDWeX1QqX7oFYnoeDTRh15XGjFyB3cgW8E/edit?usp=sharing",
 };
