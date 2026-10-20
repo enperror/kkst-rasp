@@ -885,6 +885,55 @@
   }
   .day-tab-today{display:inline-flex;align-items:center;min-height:22px;padding:4px 7px;border:1px solid #EBC5CF;border-radius:999px;background:#FCE8EE;color:#A91F3B;font:800 9px/1 'Geist',sans-serif;letter-spacing:.04em;white-space:nowrap}
   body.tv-mode .day-tab-today{font-size:11px;padding:5px 9px}
+
+  /* Single slider control: the KKST crest marks the selected viewing mode. */
+  .display-mode-control{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;width:232px;height:44px;padding:4px;border:1px solid #CFDCE6;border-radius:999px;background:#DDE8F0;overflow:hidden}
+  .display-mode-button{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;width:100%;min-height:34px;padding:0 6px;border:0;border-radius:999px;background:transparent;color:#526674;font:600 11px 'Geist',sans-serif;white-space:nowrap}
+  .display-mode-button[aria-pressed="true"]{justify-content:flex-start;padding-left:42px;padding-right:5px;border-color:transparent;background:transparent;color:#1A2229;box-shadow:none}
+  .mode-slider-thumb{position:absolute;z-index:1;top:5px;left:5px;display:grid;place-items:center;width:32px;height:32px;overflow:hidden;border:1px solid #CFDCE6;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(38,61,78,.14);pointer-events:none;transition:transform .24s cubic-bezier(.2,.7,.2,1)}
+  .mode-slider-thumb img{display:block;width:100%;height:100%;object-fit:contain}
+  body.tv-mode .mode-slider-thumb{transform:translateX(111px)}
+
+  @media(max-width:680px){
+    #actions{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;padding:0 14px;margin:10px 0}
+    #actions>button,#actions>a{display:block;width:100%;min-width:0;margin:0}
+    #actions>a>button{display:flex;align-items:center;justify-content:center;width:100%;min-height:40px}
+    .display-mode-control{justify-self:end;width:232px;max-width:100%}
+    .day-switcher{margin:10px 14px 7px}
+    .day-nav{gap:5px}
+    .day-tab{min-height:38px;flex-basis:96px;min-width:96px;padding:6px 8px}
+    .day-tab-weekday{font-size:11px}
+    .day-tab-date{font-size:10px}
+    .day-tab-today{min-height:19px;padding:3px 5px;font-size:8px}
+    #board{margin:0 14px 18px;gap:9px}
+    .day-head{padding:11px 13px}
+    .day-title{font-size:16px}
+    .day-date{padding:4px 7px;font-size:10px}
+    .lesson{grid-template-columns:max-content minmax(0,1fr) max-content;grid-template-rows:auto auto;gap:4px 9px;align-items:start;padding:9px 11px}
+    .lesson>.num{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;gap:6px;text-align:left;white-space:nowrap}
+    .lesson .num-badge,.teacher-lesson .num-badge{width:auto;height:auto;margin:0;padding:0;border:0;background:transparent;color:var(--red);font-size:16px;line-height:1}
+    .lesson .time,.teacher-lesson .time{margin:0;color:#60717F;font-size:10px;line-height:1.2;text-align:left;white-space:nowrap}
+    .lesson>.subj-wrap{grid-column:2;grid-row:1;min-width:0;align-self:center}
+    .lesson>.room-wrap{grid-column:3;grid-row:2;justify-self:end;align-self:start;max-width:112px;min-width:0;gap:4px;flex-wrap:wrap}
+    .lesson .room{grid-column:auto;min-width:0;padding:4px 6px;font-size:10px}
+    .lesson .room div{padding-right:5px}
+    .lesson .subj{font-size:13px;line-height:1.2;overflow-wrap:anywhere}
+    .lesson .teacher{margin-top:2px;font-size:10px;line-height:1.2}
+    .lesson .entry{margin-bottom:3px}
+    .lesson .lesson-note-tools{gap:5px;margin-top:4px}
+    .lesson .lesson-note-button{min-height:26px;padding:3px 6px;font-size:9px}
+    .lesson .lesson-note-preview{font-size:10px}
+    .lesson .current-lesson-label,.teacher-lesson .current-lesson-label{min-height:20px;padding:3px 5px;font-size:8px}
+    .teacher-lesson{grid-template-columns:max-content minmax(0,1fr) max-content;grid-template-rows:auto auto;gap:4px 9px;padding:9px 11px}
+    .teacher-lesson>.num{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;gap:6px;white-space:nowrap}
+    .teacher-lesson-details{grid-column:2;grid-row:1;min-width:0;display:flex;flex-direction:column}
+    .teacher-lesson .subj{order:-1;font-size:13px;line-height:1.2;overflow-wrap:anywhere}
+    .teacher-lesson .teacher-room-wrap{grid-column:3;grid-row:2;justify-self:end;align-self:start;max-width:112px;min-width:0;gap:4px;flex-wrap:wrap}
+    .teacher-room-wrap .teacher-room{grid-column:auto;justify-self:auto;padding:4px 6px;font-size:10px}
+    .teacher-groups{gap:4px;margin-bottom:2px}
+    .teacher-class{padding:3px 5px;font-size:9px}
+    .teacher-subgroup{font-size:9px}
+  }
 </style>
 </head>
 <body>
@@ -903,8 +952,9 @@
       <button id="tv-cycle-next" type="button">Следующий экран</button>
     </div>
     <div class="display-mode-control" role="group" aria-label="Режим отображения">
-      <button id="mode-normal" class="display-mode-button" type="button" aria-pressed="true">Обычный режим</button>
-      <button id="mode-tv" class="display-mode-button" type="button" aria-pressed="false">Телевизор</button>
+      <button id="mode-normal" class="display-mode-button" type="button" aria-label="Обычный режим" aria-pressed="true">Обычный</button>
+      <button id="mode-tv" class="display-mode-button" type="button" aria-label="Телевизор" aria-pressed="false">Телевизор</button>
+      <span class="mode-slider-thumb" aria-hidden="true"><img src="kkst-logo.png" alt=""></span>
     </div>
   </div>
   <section id="group-screen" class="group-intro">
@@ -957,7 +1007,7 @@
     <div id="actions">
       <button id="roster-open" class="ghost" type="button" style="display:none" aria-expanded="false" aria-controls="roster-panel">Ученики</button>
       <button id="send" class="send" style="display:none">📤 ОТПРАВИТЬ В ЧАТ</button>
-      <a id="dl" style="display:none"><button class="ghost">⬇ СКАЧАТЬ PNG</button></a>
+      <a id="dl" style="display:none"><button class="ghost">СКАЧАТЬ PNG</button></a>
       <button id="refresh" class="ghost">⟳ ОБНОВИТЬ ДАННЫЕ</button>
     </div>
     <section id="roster-panel" class="roster-panel" hidden aria-label="Список учеников группы">
