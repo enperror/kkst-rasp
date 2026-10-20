@@ -889,6 +889,7 @@
   /* Single slider control: the KKST crest marks the selected viewing mode. */
   .display-mode-control{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;width:232px;height:44px;padding:4px;border:1px solid #CFDCE6;border-radius:999px;background:#DDE8F0;overflow:hidden}
   .display-mode-button{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;width:100%;min-height:34px;padding:0 6px;border:0;border-radius:999px;background:transparent;color:#526674;font:600 11px 'Geist',sans-serif;white-space:nowrap}
+  .mode-short,.toolbar-teacher-label-short{display:none}
   .display-mode-button[aria-pressed="true"]{justify-content:flex-start;padding-left:42px;padding-right:5px;border-color:transparent;background:transparent;color:#1A2229;box-shadow:none}
   .mode-slider-thumb{position:absolute;z-index:1;top:5px;left:5px;display:grid;place-items:center;width:32px;height:32px;overflow:hidden;border:1px solid #CFDCE6;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(38,61,78,.14);pointer-events:none;transition:transform .24s cubic-bezier(.2,.7,.2,1)}
   .mode-slider-thumb img{display:block;width:100%;height:100%;object-fit:contain}
@@ -935,46 +936,65 @@
     .teacher-subgroup{font-size:9px}
   }
 
-  /* Compact phone layout: lock toolbar/actions to one column and keep each lesson in a tight three-part row. */
+  /* Compact phone toolbar and readable schedule cards. */
   @media(max-width:760px){
-    .display-mode-bar{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}
-    .toolbar-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%;gap:6px}
-    .toolbar-brand{width:100%;min-width:0}
-    .toolbar-teacher-button{width:100%;min-width:0}
-    .display-mode-control{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;max-width:320px!important;margin:0 auto;justify-self:stretch}
+    .display-mode-bar{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between;gap:5px!important;padding:6px 6px!important}
+    .toolbar-actions{display:contents!important}
+    .toolbar-brand{display:flex;flex:0 1 auto;align-items:center;gap:3px;width:auto;min-width:0}
+    .kkst-logo{width:25px;height:25px;padding:1px;flex:0 0 25px}
+    .notes-open-button{min-width:0;min-height:28px;padding:3px 5px;gap:3px;font-size:8px;white-space:nowrap}
+    #notes-count{min-width:14px;height:14px;padding:0 3px;font-size:8px}
+    .toolbar-teacher-button{flex:0 1 auto;width:auto;min-width:0;min-height:28px;gap:3px;padding:3px 5px;font-size:8px;white-space:nowrap}
+    .toolbar-teacher-label-full{display:none!important}
+    .toolbar-teacher-label-short{display:inline!important}
+    .toolbar-teacher-button .teacher-entry-icon{font-size:9px}
+    .display-mode-control{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;flex:0 0 100px;width:100px;min-width:92px;max-width:108px;height:32px;margin:0;padding:3px;justify-self:auto}
+    .display-mode-button{min-height:24px;padding:0 2px;font-size:7px}
+    .display-mode-button[aria-pressed="true"]{justify-content:flex-start;padding-left:24px;padding-right:1px}
+    .mode-short{display:inline!important}
+    .mode-full{display:none!important}
+    .mode-slider-thumb{top:4px;left:4px;width:22px;height:22px;transition:left .24s cubic-bezier(.2,.7,.2,1)}
+    body.tv-mode .mode-slider-thumb{left:calc(100% - 26px);transform:none}
+
     #actions{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:6px!important;width:auto}
     #actions>button,#actions>a{flex:0 0 auto;width:100%;min-width:0;margin:0}
     #actions>a>button{display:flex;align-items:center;justify-content:center;width:100%;min-height:38px}
 
-    .lesson,.teacher-lesson{grid-template-columns:max-content minmax(0,1fr) max-content!important;grid-template-rows:auto!important;column-gap:7px;row-gap:0;align-items:start;padding:7px 8px!important}
+    #board{margin:0 11px 18px;gap:10px}
+    .day-head{padding:12px 12px;gap:7px}
+    .day-heading{gap:6px;flex-wrap:nowrap;min-width:0}
+    .day-title{font-size:16px;white-space:nowrap}
+    .day-date{padding:4px 6px;font-size:10px}
+    .week-label{padding:3px 5px;font-size:8px;white-space:nowrap}
+    .lesson,.teacher-lesson{grid-template-columns:max-content minmax(0,1fr) max-content!important;grid-template-rows:auto!important;column-gap:8px;row-gap:0;align-items:start;padding:9px 10px!important}
     .lesson>.num,.teacher-lesson>.num{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;gap:5px;text-align:left;white-space:nowrap;align-self:start;padding-top:2px}
-    .lesson .num-badge,.teacher-lesson .num-badge{width:auto;height:auto;margin:0;padding:0;border:0;background:transparent;color:var(--red);font-size:14px;line-height:1}
-    .lesson .time,.teacher-lesson .time{margin:0;color:#60717F;font-size:9px;line-height:1.1;text-align:left;white-space:nowrap}
-    .lesson>.subj-wrap,.teacher-lesson-details{grid-column:2;grid-row:1;min-width:0;align-self:center}
-    .lesson .entry{margin:0 0 2px}
+    .lesson .num-badge,.teacher-lesson .num-badge{width:auto;height:auto;margin:0;padding:0;border:0;background:transparent;color:var(--red);font-size:15px;line-height:1}
+    .lesson .time,.teacher-lesson .time{margin:0;color:#60717F;font-size:10px;line-height:1.15;text-align:left;white-space:nowrap}
+    .lesson>.subj-wrap,.teacher-lesson-details{grid-column:2;grid-row:1;min-width:0;align-self:start}
+    .lesson .entry{margin:0 0 3px}
     .lesson .entry:last-child{margin-bottom:0}
-    .lesson .subgroup{max-width:100%;margin:0 0 1px;padding:1px 3px;font-size:7px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .lesson .subj,.teacher-lesson .subj{display:block;max-width:100%;min-width:0;margin:0;font-size:12px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
-    .lesson .teacher{display:block;max-width:100%;margin:1px 0 0;font-size:9px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .lesson .lesson-note-tools{display:flex;flex-wrap:nowrap;align-items:center;gap:4px;max-width:100%;margin-top:2px;overflow:hidden}
-    .lesson .lesson-note-button{flex:0 0 auto;min-height:21px;padding:2px 5px;font-size:8px}
-    .lesson .lesson-note-preview{flex:1 1 auto;min-width:0;font-size:8px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lesson .subgroup{max-width:100%;margin:0 0 2px;padding:1px 3px;font-size:7px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lesson .subj,.teacher-lesson .subj{display:block;max-width:100%;min-width:0;margin:0;font-size:13px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+    .lesson .teacher{display:block;max-width:100%;margin:2px 0 0;font-size:10px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lesson .lesson-note-tools{display:flex;flex-wrap:nowrap;align-items:center;gap:4px;max-width:100%;margin-top:3px;overflow:hidden}
+    .lesson .lesson-note-button{flex:0 0 auto;min-height:22px;padding:2px 5px;font-size:8px}
+    .lesson .lesson-note-preview{flex:1 1 auto;min-width:0;font-size:9px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-    .lesson>.room-wrap,.teacher-lesson .teacher-room-wrap{grid-column:3;grid-row:1;display:flex;flex-direction:column;align-items:flex-end;justify-self:end;align-self:start;gap:2px;width:max-content;max-width:76px;min-width:0;flex-wrap:nowrap}
-    .lesson .room-wrap .room,.teacher-room-wrap .teacher-room{order:-1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:1px;grid-column:auto;justify-self:end;align-self:flex-end;width:max-content;max-width:100%;min-width:0;padding:3px 4px;font-size:9px;line-height:1.05;text-align:right;white-space:nowrap}
+    .lesson>.room-wrap,.teacher-lesson .teacher-room-wrap{grid-column:3;grid-row:1;display:flex;flex-direction:column;align-items:flex-end;justify-self:end;align-self:start;gap:3px;width:max-content;max-width:76px;min-width:0;flex-wrap:nowrap}
+    .lesson .room-wrap .room,.teacher-room-wrap .teacher-room{order:-1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:1px;grid-column:auto;justify-self:end;align-self:flex-end;width:max-content;max-width:100%;min-width:0;padding:4px 5px;font-size:10px;line-height:1.1;text-align:right;white-space:nowrap}
     .lesson .room div{padding:0;border:0}
-    .lesson .current-lesson-label,.teacher-lesson .current-lesson-label{order:1;min-height:15px;max-width:76px;padding:2px 4px;font-size:7px;line-height:1;white-space:nowrap}
+    .lesson .current-lesson-label,.teacher-lesson .current-lesson-label{order:1;min-height:16px;max-width:76px;padding:2px 4px;font-size:7px;line-height:1;white-space:nowrap}
 
     .teacher-lesson-details{display:flex;flex-direction:column}
     .teacher-lesson .subj{order:-1}
-    .teacher-groups{gap:2px;margin:2px 0 0}
-    .teacher-class,.teacher-subgroup{padding:1px 3px;font-size:7px;line-height:1}
+    .teacher-groups{gap:3px;margin:3px 0 0}
+    .teacher-class,.teacher-subgroup{padding:2px 4px;font-size:8px;line-height:1}
 
-    /* Only clipped subject names expand into a wider, wrapping card; short names stay compact. */
-    .lesson.long-subject>.subj-wrap,.teacher-lesson.long-subject>.teacher-lesson-details{grid-column:2/4;grid-row:1;align-self:start}
-    .lesson.long-subject>.room-wrap,.teacher-lesson.long-subject>.teacher-room-wrap{grid-column:3;grid-row:2;justify-self:end;align-self:start}
-    .lesson.long-subject .subj,.teacher-lesson.long-subject .subj{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word;line-height:1.18}
-    .lesson.long-subject .teacher,.lesson.long-subject .lesson-note-preview{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+    /* Expand only names that were clipped, keeping the cabinet as a firm right boundary. */
+    .lesson.long-subject>.subj-wrap,.teacher-lesson.long-subject>.teacher-lesson-details{grid-column:2;grid-row:1;align-self:start}
+    .lesson.long-subject>.room-wrap,.teacher-lesson.long-subject>.teacher-room-wrap{grid-column:3;grid-row:1;justify-self:end;align-self:start}
+    .lesson.long-subject .subj,.teacher-lesson.long-subject .subj{font-size:10.5px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;hyphens:auto;line-height:1.15}
+    .lesson.long-subject .teacher,.lesson.long-subject .lesson-note-preview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
   }
 </style>
 </head>
@@ -986,7 +1006,7 @@
         <img class="kkst-logo" src="kkst-logo.png" alt="Логотип ККСТ" width="48" height="48">
         <button id="open-notes" class="notes-open-button" type="button">Заметки <span id="notes-count" aria-label="Количество заметок">0</span></button>
       </div>
-      <button id="open-teachers" class="teacher-entry-button toolbar-teacher-button" type="button" aria-label="Расписание преподавателей" title="Расписание преподавателей" disabled><span class="teacher-entry-icon" aria-hidden="true">↗</span><span>Преподаватели</span></button>
+      <button id="open-teachers" class="teacher-entry-button toolbar-teacher-button" type="button" aria-label="Расписание преподавателей" title="Расписание преподавателей" disabled><span class="teacher-entry-icon" aria-hidden="true">↗</span><span class="toolbar-teacher-label-full">Преподаватели</span><span class="toolbar-teacher-label-short">Преп.</span></button>
     </div>
     <div class="tv-cycle-controls" id="tv-cycle-controls" hidden aria-label="Управление автоэфиром">
       <span id="tv-cycle-state">Автоэфир включён</span>
@@ -994,8 +1014,8 @@
       <button id="tv-cycle-next" type="button">Следующий экран</button>
     </div>
     <div class="display-mode-control" role="group" aria-label="Режим отображения">
-      <button id="mode-normal" class="display-mode-button" type="button" aria-label="Обычный режим" aria-pressed="true">Обычный</button>
-      <button id="mode-tv" class="display-mode-button" type="button" aria-label="Телевизор" aria-pressed="false">Телевизор</button>
+      <button id="mode-normal" class="display-mode-button" type="button" aria-label="Обычный режим" aria-pressed="true"><span class="mode-full">Обычный</span><span class="mode-short">Обыч.</span></button>
+      <button id="mode-tv" class="display-mode-button" type="button" aria-label="Телевизор" aria-pressed="false"><span class="mode-full">Телевизор</span><span class="mode-short">ТВ</span></button>
       <span class="mode-slider-thumb" aria-hidden="true"><img src="kkst-logo.png" alt=""></span>
     </div>
   </div>
