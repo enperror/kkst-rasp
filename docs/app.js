@@ -29,9 +29,6 @@
   let lastImageUrl = null;
   let canvasRequestId = 0;
   let teacherCatalogCache = null;
-  const kioskTv = new URLSearchParams(window.location.search).get("tv")==="1";
-  let tvRotationTimer = null;
-  let tvRotationPaused = false;
   let activityContext = null;
 
   function hideNotesPage(){
@@ -45,32 +42,6 @@
   }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-  function setDisplayMode(mode){
-    const tv = kioskTv || mode === "tv";
-    document.body.classList.toggle("tv-mode", tv);
-    document.body.classList.toggle("kiosk-tv-mode", kioskTv);
-    $("mode-normal").setAttribute("aria-pressed", tv ? "false" : "true");
-    $("mode-tv").setAttribute("aria-pressed", tv ? "true" : "false");
-    $("tv-cycle-controls").hidden=!tv;
-    updateTvCycleState();
-    lsSet("kkst-display-mode", tv ? "tv" : "normal");
-    if(tv) ensureTvRotation();
-    if(!$("notes-screen").hidden) closeNotesPage();
-    if(tv){
-      if(parsed){
-        $("group-filter").value="";
-        $("teacher-filter").value="";
-        activeFamilyFilter="*";
-        document.querySelectorAll(".family-filter").forEach((button)=>{
-          const active=button.dataset.family==="*";
-          button.classList.toggle("active",active);
-          button.setAttribute("aria-pressed",active?"true":"false");
-        });
-        applyGroupFilters();
-        filterTeacherPicker();
-      }
-    }
-  }
   function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
   function readStoredObject(key){
     try{ const value=JSON.parse(lsGet(key)||"{}"); return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
@@ -560,7 +531,6 @@
   }
 
   function restoreSavedFavorite(){
-    if(document.body.classList.contains("tv-mode")) return;
     const favorite=getFavorite();
     if(!favorite || !parsed) return;
     if(favorite.type==="group"){
@@ -645,15 +615,6 @@
     if(showNotes) renderNotesPage();
   }
 
-  function updateTvCycleState(){
-    const button=$("tv-cycle-pause"),state=$("tv-cycle-state");
-    if(button) button.textContent=tvRotationPaused?"Продолжить":"Пауза";
-    if(!state) return;
-    if(tvRotationPaused){state.textContent="Автоэфир на паузе";return;}
-    if(activeGroup&&parsed){const index=parsed.all_groups.indexOf(activeGroup);state.textContent=`Автоэфир · ${activeGroup} · ${index+1}/${parsed.all_groups.length}`;}
-    else state.textContent="Автоэфир · список групп";
-  }
-  function setTvRotationPaused(paused){tvRotationPaused=!!paused;updateTvCycleState();}
   function showGroupDirectory(){
     if(!parsed) return;
     viewMode="group-picker";activeGroup=null;activeTeacher=null;teacherReturnContext=null;
@@ -661,27 +622,8 @@
     $("notes-screen").hidden=true;$("schedule-screen").style.display="none";
     $("teacher-screen").style.display="none";$("group-screen").style.display="block";
     $("roster-panel").hidden=true;
-    updateTvCycleState();
     window.scrollTo({top:0,behavior:"smooth"});
   }
-  function advanceTvScreen(){
-    if(!parsed?.all_groups?.length||!document.body.classList.contains("tv-mode")) return;
-    const groups=parsed.all_groups;
-    if(viewMode==="group"&&activeGroup){
-      const index=groups.indexOf(activeGroup);
-      if(index>=groups.length-1){showGroupDirectory();return;}
-      show(groups[Math.max(0,index+1)]);return;
-    }
-    show(groups[0]);
-  }
-  function ensureTvRotation(){
-    if(tvRotationTimer) return;
-    tvRotationTimer=setInterval(()=>{
-      if(document.hidden||tvRotationPaused||!document.body.classList.contains("tv-mode")) return;
-      advanceTvScreen();
-    },20000);
-  }
-
   function loadCachedSchedule(){
     const cache=readStoredObject("kkst-schedule-cache-v1");
     if(cache.version!==1 || !cache.parsed || !Array.isArray(cache.parsed.days) || !Array.isArray(cache.parsed.all_groups)) return false;
@@ -1325,7 +1267,6 @@
     $("schedule-screen").style.display = "block";
     $("back-groups").textContent = "← ВСЕ ГРУППЫ";
     renderSelectedDay();
-    updateTvCycleState();
     lsSet("lastGroup", group);
     window.scrollTo({top:0, behavior:"smooth"});
   }
@@ -1480,11 +1421,6 @@
     }
   }
 
-  $("mode-normal").addEventListener("click",()=>setDisplayMode("normal"));
-  $("mode-tv").addEventListener("click",()=>setDisplayMode("tv"));
-  $("tv-cycle-pause").addEventListener("click",()=>setTvRotationPaused(!tvRotationPaused));
-  $("tv-cycle-next").addEventListener("click",advanceTvScreen);
-  setDisplayMode(kioskTv || lsGet("kkst-display-mode") === "tv" ? "tv" : "normal");
 
   $("open-notes").addEventListener("click",openNotesPage);
   $("notes-close").addEventListener("click",closeNotesPage);
