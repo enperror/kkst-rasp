@@ -969,6 +969,12 @@
     .teacher-lesson .subj{order:-1}
     .teacher-groups{gap:2px;margin:2px 0 0}
     .teacher-class,.teacher-subgroup{padding:1px 3px;font-size:7px;line-height:1}
+
+    /* Only clipped subject names expand into a wider, wrapping card; short names stay compact. */
+    .lesson.long-subject>.subj-wrap,.teacher-lesson.long-subject>.teacher-lesson-details{grid-column:2/4;grid-row:1;align-self:start}
+    .lesson.long-subject>.room-wrap,.teacher-lesson.long-subject>.teacher-room-wrap{grid-column:3;grid-row:2;justify-self:end;align-self:start}
+    .lesson.long-subject .subj,.teacher-lesson.long-subject .subj{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:break-word;line-height:1.18}
+    .lesson.long-subject .teacher,.lesson.long-subject .lesson-note-preview{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
   }
 </style>
 </head>
