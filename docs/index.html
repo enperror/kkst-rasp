@@ -934,6 +934,42 @@
     .teacher-class{padding:3px 5px;font-size:9px}
     .teacher-subgroup{font-size:9px}
   }
+
+  /* Compact phone layout: lock toolbar/actions to one column and keep each lesson in a tight three-part row. */
+  @media(max-width:760px){
+    .display-mode-bar{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important}
+    .toolbar-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%;gap:6px}
+    .toolbar-brand{width:100%;min-width:0}
+    .toolbar-teacher-button{width:100%;min-width:0}
+    .display-mode-control{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;max-width:320px!important;margin:0 auto;justify-self:stretch}
+    #actions{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:6px!important;width:auto}
+    #actions>button,#actions>a{flex:0 0 auto;width:100%;min-width:0;margin:0}
+    #actions>a>button{display:flex;align-items:center;justify-content:center;width:100%;min-height:38px}
+
+    .lesson,.teacher-lesson{grid-template-columns:max-content minmax(0,1fr) max-content!important;grid-template-rows:auto!important;column-gap:7px;row-gap:0;align-items:start;padding:7px 8px!important}
+    .lesson>.num,.teacher-lesson>.num{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;gap:5px;text-align:left;white-space:nowrap;align-self:start;padding-top:2px}
+    .lesson .num-badge,.teacher-lesson .num-badge{width:auto;height:auto;margin:0;padding:0;border:0;background:transparent;color:var(--red);font-size:14px;line-height:1}
+    .lesson .time,.teacher-lesson .time{margin:0;color:#60717F;font-size:9px;line-height:1.1;text-align:left;white-space:nowrap}
+    .lesson>.subj-wrap,.teacher-lesson-details{grid-column:2;grid-row:1;min-width:0;align-self:center}
+    .lesson .entry{margin:0 0 2px}
+    .lesson .entry:last-child{margin-bottom:0}
+    .lesson .subgroup{max-width:100%;margin:0 0 1px;padding:1px 3px;font-size:7px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lesson .subj,.teacher-lesson .subj{display:block;max-width:100%;min-width:0;margin:0;font-size:12px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+    .lesson .teacher{display:block;max-width:100%;margin:1px 0 0;font-size:9px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lesson .lesson-note-tools{display:flex;flex-wrap:nowrap;align-items:center;gap:4px;max-width:100%;margin-top:2px;overflow:hidden}
+    .lesson .lesson-note-button{flex:0 0 auto;min-height:21px;padding:2px 5px;font-size:8px}
+    .lesson .lesson-note-preview{flex:1 1 auto;min-width:0;font-size:8px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    .lesson>.room-wrap,.teacher-lesson .teacher-room-wrap{grid-column:3;grid-row:1;display:flex;flex-direction:column;align-items:flex-end;justify-self:end;align-self:start;gap:2px;width:max-content;max-width:76px;min-width:0;flex-wrap:nowrap}
+    .lesson .room-wrap .room,.teacher-room-wrap .teacher-room{order:-1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:1px;grid-column:auto;justify-self:end;align-self:flex-end;width:max-content;max-width:100%;min-width:0;padding:3px 4px;font-size:9px;line-height:1.05;text-align:right;white-space:nowrap}
+    .lesson .room div{padding:0;border:0}
+    .lesson .current-lesson-label,.teacher-lesson .current-lesson-label{order:1;min-height:15px;max-width:76px;padding:2px 4px;font-size:7px;line-height:1;white-space:nowrap}
+
+    .teacher-lesson-details{display:flex;flex-direction:column}
+    .teacher-lesson .subj{order:-1}
+    .teacher-groups{gap:2px;margin:2px 0 0}
+    .teacher-class,.teacher-subgroup{padding:1px 3px;font-size:7px;line-height:1}
+  }
 </style>
 </head>
 <body>
