@@ -868,6 +868,18 @@
   }
 
   /* ---------- HTML-рендер (CSS) ---------- */
+  function updateMobileSubjectFit(){
+    const compact=window.matchMedia?.("(max-width:760px)").matches;
+    const rows=[...document.querySelectorAll("#board .lesson,#board .teacher-lesson")];
+    rows.forEach((row)=>{
+      row.classList.remove("long-subject");
+      if(!compact) return;
+      const subjects=[...row.querySelectorAll(".subj")];
+      if(subjects.some((subject)=>subject.scrollWidth>subject.clientWidth+1)) row.classList.add("long-subject");
+    });
+  }
+  window.addEventListener("resize",()=>requestAnimationFrame(updateMobileSubjectFit),{passive:true});
+
   function renderBoard(group, days){
     const board = $("board");
     if(!board) return;
@@ -932,6 +944,7 @@
       board.appendChild(dayEl);
     });
     updateCurrentLessonHighlights();
+    requestAnimationFrame(updateMobileSubjectFit);
   }
 
   function renderTeacherBoard(teacherName, day, records){
@@ -980,6 +993,7 @@
     }
     board.appendChild(section);
     updateCurrentLessonHighlights();
+    requestAnimationFrame(updateMobileSubjectFit);
   }
 
   function updateRosterCopyAvailability(){
