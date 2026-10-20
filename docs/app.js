@@ -806,7 +806,7 @@
     if(active.length){
       const summary=activitySummary(active),start=Math.min(...active.map((item)=>item.range.start)),end=Math.max(...active.map((item)=>item.range.end));
       state="ИДЁТ ПАРА";title=`${summary.pair} · ${summary.subject||"Занятие"}`;detail=summary.detail;room=summary.room;
-      timer=`Прошла ${formatDuration(current-start)} · осталось ${formatDuration(end-current,true)}`;
+      timer=`Прошло ${formatDuration(current-start)} · осталось ${formatDuration(end-current,true)}`;
       progress=Math.max(0,Math.min(100,((current-start)/(end-start))*100));
     }else if(next.length){
       const summary=activitySummary(next),isBreak=previous.length>0;
@@ -921,7 +921,7 @@
             const notePreview=savedNote?`<span class="lesson-note-preview">${esc(savedNote.replace(/\s+/g," "))}</span>`:"";
             const noteButton=`<div class="lesson-note-tools"><button type="button" class="lesson-note-button${savedNote?" has-note":""}" data-note-number="${esc(les.number)}" aria-label="${savedNote?"Изменить":"Добавить"} заметку к ${esc(les.number)} паре">${savedNote?"✎ Заметка":"＋ Заметка"}</button>${notePreview}</div>`;
             el.innerHTML = `
-              <div class="num"><div class="num-badge ${les.number==="0"?"vd":""}">${esc(les.number==="0"?"ВД":les.number)}</div><div class="time">${esc(t).replace("–","<br>")}</div></div>
+              <div class="num"><div class="num-badge ${les.number==="0"?"vd":""}">${esc(les.number==="0"?"ВД":les.number)}</div><div class="time">${esc(t)}</div></div>
               <div class="subj-wrap">${entriesHtml}${noteButton}</div>
               ${roomHtml}
             `;
@@ -974,7 +974,7 @@
         const rooms=[...new Set(record.assignments.flatMap((assignment)=>assignment.rooms))];
         const roomContent=rooms.length ? `<div class="teacher-room">${rooms.map(esc).join(" · ")}</div>` : `<div class="teacher-room">—</div>`;
         const roomHtml=`<div class="teacher-room-wrap"><span class="current-lesson-label" hidden>Идёт сейчас</span>${roomContent}</div>`;
-        row.innerHTML = `<div class="num"><div class="num-badge">${esc(record.number === "0" ? "ВД" : record.number)}</div><div class="time">${esc(time).replace("–","<br>")}</div></div><div class="teacher-lesson-details"><div class="teacher-groups">${groupsHtml}</div><div class="subj">${esc(record.subject)}</div></div>${roomHtml}`;
+        row.innerHTML = `<div class="num"><div class="num-badge">${esc(record.number === "0" ? "ВД" : record.number)}</div><div class="time">${esc(time)}</div></div><div class="teacher-lesson-details"><div class="teacher-groups">${groupsHtml}</div><div class="subj">${esc(record.subject)}</div></div>${roomHtml}`;
         list.appendChild(row);
       });
     }
